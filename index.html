@@ -115,7 +115,7 @@ const TODAY=ymd(new Date());
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)}
 // 에듀패밀리 측정 항목과 같게
-const FIT=[{k:'run',l:'10m 달리기',s:'10m',u:'초',low:true,lim:[1,20],d:2},{k:'jump',l:'제자리멀리뛰기',s:'멀리뛰기',u:'cm',lim:[10,350],d:0},{k:'situp',l:'윗몸일으키기',s:'윗몸',u:'회',lim:[1,150],d:0},{k:'moa',l:'모아뛰기',s:'모아',u:'회',lim:[1,200],d:0},{k:'alt',l:'번갈아뛰기',s:'번갈아',u:'회',lim:[1,200],d:0}];
+const FIT=[{k:'run',l:'10m 달리기',s:'10m',u:'초',low:true,lim:[1,20],d:2},{k:'jump',l:'제자리멀리뛰기',s:'멀리뛰기',u:'cm',lim:[10,350],d:0},{k:'situp',l:'윗몸일으키기',s:'윗몸',u:'회',lim:[1,150],d:0},{k:'moa',l:'모아뛰기',s:'모아',u:'회',lim:[1,500],d:0},{k:'alt',l:'번갈아뛰기',s:'번갈아',u:'회',lim:[1,500],d:0}];
 const FK=FIT.map(f=>f.k),FI=Object.fromEntries(FIT.map(f=>[f.k,f]));
 const LOGO='data:image/png;base64,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';
 const BELTS=['','노랑띠','초록띠','파랑띠','빨강띠','품띠','검정띠'];
@@ -303,7 +303,7 @@ const TABS=[['students','👥','원생'],['quick','⚡','측정 입력'],['repor
 function renderAdmin(){
   $('#nav').classList.remove('hide');
   $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-tab="${k}"><span class="ic">${i}</span>${l}</button>`).join('');
-  $('#nav').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(S.tab==='quick')qDraft();S.tab=b.dataset.tab;window.scrollTo(0,0);renderAdmin()});
+  $('#nav').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(S.tab==='quick')qDraft();S.sel=null;S.tab=b.dataset.tab;window.scrollTo(0,0);renderAdmin()});
   const active=document.activeElement&&document.activeElement.id,caret=active&&document.activeElement.selectionStart;
   $('#view').innerHTML={students:vStudents,quick:vQuick,report:vReport,help:vHelp}[S.tab]();
   if(active==='search'){const s=$('#search');if(s){s.focus();try{s.setSelectionRange(caret,caret)}catch(e){}}}
@@ -330,7 +330,7 @@ function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
   <li>학부모님께 "처음 왔어요"로 비밀번호를 새로 만드시라고 안내. 리포트·기록은 그대로예요.</li>
   <li>"이미 비밀번호를 만드셨어요"가 뜨는데 본인이 만든 적 없다고 하시면 — 같은 방법으로 삭제 후 다시 만들게 해 주세요.</li></ol></details>
  <details><summary><span><span class="step">관리</span>퇴원생 · 이름/번호 변경</span></summary><ul>
-  <li><b>퇴원생</b> — 원생 탭 › 아이 이름 › 삭제 (두 번 누르기). 기록과 학부모 리포트도 함께 지워져요.</li>
+  <li><b>퇴원생</b> — 한 명: 원생 탭 › 아이 이름 › 삭제 (두 번 누르기). 여러 명: 원생 탭 아래 <b>여러 명 골라서 삭제</b> › 체크 › 삭제. 기록과 학부모 리포트도 함께 지워져요. (학부모 로그인 계정은 Firebase › Authentication에서 따로 지울 수 있어요)</li>
   <li><b>이름·보호자 번호가 바뀌면</b> 로그인 ID도 바뀌어요. 저장 후 리포트를 다시 올리고, 학부모님은 "처음 왔어요"로 새로 만들어야 해요.</li>
   <li>학부모 로그인은 <b>아이 이름 + 부모1 전화번호</b>예요. 에듀에 적힌 이름 그대로(띄어쓰기는 상관없음) 넣어야 들어와져요.</li></ul></details>
  <details><summary><span><span class="step">사범님</span>계정 추가 · 폰 바탕화면에 두기</span></summary><ul>
@@ -343,12 +343,22 @@ function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
  <div class="note">문의·수정이 필요하면 이 사이트를 만든 파일(index.html)을 고치면 돼요. 주소는 그대로 유지돼요.</div></div>`}
 function vStudents(){
   let l=byCls(sorted());const q=S.search.trim();if(q)l=l.filter(x=>(x.name||'').includes(q)||digits(x.phone).includes(digits(q)||'@'));
+  const sel=S.sel;
   return`<input id="search" placeholder="이름·번호 검색" value="${esc(S.search)}" style="margin-bottom:10px">${chips()}
-  <div class="card">${l.length?l.map(x=>`<div class="item" data-edit="${x.id}"><div class="av">${esc(given(x.name))}</div><div class="grow"><div class="name">${esc(x.name)} <span class="meta">${esc(age(x.birth))}</span></div><div class="meta">${[x.cls,x.grade,x.belt].filter(Boolean).map(esc).join(' · ')} · ${esc(x.phone||'번호 없음')}</div></div><span class="meta">›</span></div>`).join(''):`<div class="empty">${S.students.length?'조건에 맞는 원생이 없어요':'＋ 버튼으로 등록하거나, 아래 "명단 한 번에 넣기"를 써보세요'}</div>`}</div>
+  ${sel?`<div class="card" style="background:var(--pri-soft);position:sticky;top:58px;z-index:4"><div class="row"><b class="grow">${sel.size}명 선택됨</b><button class="btn ghost sm" id="selAll">${l.length&&l.every(x=>sel.has(x.id))?'선택 해제':'보이는 '+l.length+'명 모두'}</button><button class="btn ghost sm" id="selX">취소</button></div>
+   <button class="btn danger full" id="selDel" style="margin-top:8px" ${sel.size?'':'disabled'}>🗑 선택한 ${sel.size}명 삭제</button></div>`:''}
+  <div class="card">${l.length?l.map(x=>`<div class="item" ${sel?`data-pick="${x.id}"`:`data-edit="${x.id}"`}>${sel?`<input type="checkbox" ${sel.has(x.id)?'checked':''} style="width:22px;height:22px;flex:none;pointer-events:none">`:''}<div class="av">${esc(given(x.name))}</div><div class="grow"><div class="name">${esc(x.name)} <span class="meta">${esc(age(x.birth))}</span></div><div class="meta">${[x.cls,x.grade,x.belt].filter(Boolean).map(esc).join(' · ')} · ${esc(x.phone||'번호 없음')}</div></div>${sel?'':'<span class="meta">›</span>'}</div>`).join(''):`<div class="empty">${S.students.length?'조건에 맞는 원생이 없어요':'아래 "에듀 원생 명단 엑셀 올리기"로 명단을 넣어 주세요'}</div>`}</div>
   <button class="btn full" id="roster">📥 에듀 원생 명단 엑셀 올리기</button><input type="file" id="rosterFile" accept=".xls,.xlsx" class="hide">
   <button class="btn ghost full" id="bulk" style="margin-top:8px">📋 직접 붙여넣기</button>
+  ${sel||!S.students.length?'':'<button class="btn ghost full" id="selOn" style="margin-top:8px">🗑 여러 명 골라서 삭제</button>'}
   <div class="note">에듀 › 원생 엑셀출력에서 <b>학생번호·원생이름·생일·성별·학년·부·부모1 전화번호</b>만 체크해서 받은 파일을 올리세요. 다시 올리면 바뀐 정보만 고쳐져요.<br>전체 ${S.students.length}명 · 학부모 로그인에는 <b>아이 이름</b>과 <b>보호자 번호</b>가 쓰이니 정확히 입력해 주세요.</div>
-  <button class="btn fab" id="newS">＋</button>`}
+  ${sel?'':'<button class="btn fab" id="newS">＋</button>'}`}
+async function deleteMany(ids){
+  const list=S.students.filter(x=>ids.has(x.id));const ops=[];
+  for(const s of list){ops.push(F.doc(db,'students',s.id));recsOf(s.id).forEach(r=>ops.push(F.doc(db,'records',r.id)));if(s.phone)ops.push(F.doc(db,'reports',await parentKey(s.name,s.phone)))}
+  busy=true;try{for(let i=0;i<ops.length;i+=450){const b=F.writeBatch(db);ops.slice(i,i+450).forEach(d=>b.delete(d));await b.commit()}
+    S.students=S.students.filter(x=>!ids.has(x.id));S.records=S.records.filter(r=>!ids.has(r.sid));S.sel=null;toast(`${list.length}명 삭제했어요`)}catch(e){console.error(e);toast('삭제하지 못했어요')}
+  busy=false;renderAdmin()}
 function vQuick(){
   const l=byCls(sorted());
   const ex=sid=>S.records.find(r=>r.sid===sid&&r.date===S.qdate)||{};
@@ -360,7 +370,7 @@ function vQuick(){
    ${l.length?l.map(s=>{const r=ex(s.id),d=(S.qd||{})[s.id]||{};return`<div class="qrow"><div style="flex:1;min-width:60px" class="name">${esc(s.name)}</div>${cols.map(c=>`<input type="number" inputmode="decimal" step="${c==='run'?0.01:0.1}" data-q="${s.id}" data-k="${c}" value="${esc(d[c]??r[c]??'')}" style="width:${c==='h'?74:64}px">`).join('')}</div>`}).join(''):'<div class="empty">원생을 먼저 등록해 주세요</div>'}
   </div></div>
   <button class="btn full" id="qSave" ${busy?'disabled':''}>${busy?'저장 중…':'한 번에 저장'}</button>
-  <div class="note">키 cm · 몸무게 kg · 10m 초 · 멀리뛰기 cm · 윗몸·모아·번갈아 회. 안 잰 칸은 비워 두세요. 같은 날짜 기록은 덮어써요. 저장 후 "리포트" 탭에서 학부모에게 올려주세요.</div>
+  <div class="note">키 cm · 몸무게 kg · 10m 초 · 멀리뛰기 cm · 윗몸·모아·번갈아 회. 안 잰 칸은 비워 두거나 0을 넣으세요. 숫자가 이상하면 빨간 칸으로 알려줘요. 같은 날짜 기록은 덮어써요. 저장 후 "리포트" 탭에서 학부모에게 올려주세요.</div>
   <div class="card" style="margin-top:14px"><h2>📤 에듀에 올릴 엑셀 만들기</h2>
    <label>몇 월 기록을 보낼까요?</label><input type="month" id="eduMonth" value="${S.qdate.slice(0,7)}">
    <button class="btn full" id="eduGo" style="margin-top:10px">에듀 빈문서 골라서 만들기</button><input type="file" id="eduFile" accept=".xls,.xlsx" class="hide">
@@ -477,17 +487,17 @@ async function exportEdu(file,month){
   <button class="btn full" style="margin-top:14px" onclick="this.closest('.sheet-bg').remove()">확인</button>`)}
 function qDraft(){S.qd=S.qd||{};document.querySelectorAll('[data-q]').forEach(el=>{(S.qd[el.dataset.q]=S.qd[el.dataset.q]||{})[el.dataset.k]=el.value})}
 async function saveQuick(){
-  qDraft();const ops=[];let bad=0;
+  qDraft();const ops=[];let bad=0;const badMsg=[];const LAB={h:'키',w:'몸무게',...Object.fromEntries(FIT.map(f=>[f.k,f.l]))};
   document.querySelectorAll('[data-q]').forEach(el=>el.style.borderColor='');
   for(const[sid,vals]of Object.entries(S.qd||{})){
-    const entries=Object.entries(vals).filter(([k,v])=>v!=='');if(!entries.length)continue;
+    const entries=Object.entries(vals).filter(([k,v])=>v!==''&&!(FI[k]&&+v===0));if(!entries.length)continue; // 체력 0 = 안 잼(에듀 방식)
     const old=S.records.find(r=>r.sid===sid&&r.date===S.qdate);const o=old?{...old}:{id:uid(),sid,date:S.qdate};let ok=true;
     for(const[k,v]of entries){const n=+v;const lim=k==='h'?[50,220]:k==='w'?[5,150]:FI[k].lim;
-      if(isNaN(n)||n<lim[0]||n>lim[1]){ok=false;const el=document.querySelector(`[data-q="${sid}"][data-k="${k}"]`);if(el)el.style.borderColor='var(--bad)';continue}
+      if(isNaN(n)||n<lim[0]||n>lim[1]){ok=false;const st=S.students.find(x=>x.id===sid);badMsg.push(`${st?st.name:'?'} ${LAB[k]} "${v}" (${lim[0]}~${lim[1]})`);const el=document.querySelector(`[data-q="${sid}"][data-k="${k}"]`);if(el)el.style.borderColor='var(--bad)';continue}
       o[k]=k==='h'||k==='w'?Math.round(n*10)/10:k==='run'?Math.round(n*100)/100:Math.round(n)}
     if(!ok){bad++;continue}
     if(JSON.stringify(o)!==JSON.stringify(old||{}))ops.push(o)}
-  if(bad){toast(`${bad}명 숫자를 확인해 주세요 (빨간 칸)`);return}
+  if(bad){sheet(`<h3>숫자를 확인해 주세요</h3><div class="fb" style="font-size:.9rem">아래 칸이 범위를 벗어나서 저장하지 않았어요. 고친 뒤 다시 저장해 주세요.\n\n${badMsg.map(m=>'• '+esc(m)).join('\n')}</div><button class="btn full" style="margin-top:14px" onclick="this.closest('.sheet-bg').remove()">확인</button>`);return}
   if(!ops.length){toast('바뀐 내용이 없어요');return}
   busy=true;renderAdmin();
   try{for(let i=0;i<ops.length;i+=400){const b=F.writeBatch(db);ops.slice(i,i+400).forEach(o=>{const{id,...body}=o;b.set(F.doc(db,'records',id),body)});await b.commit()}
@@ -507,7 +517,14 @@ const saveComment=(()=>{const t={};return(sid,val)=>{clearTimeout(t[sid]);t[sid]
 
 $('#view').addEventListener('click',e=>{
   if(!isAdminPage())return;
-  const t=e.target.closest('button,[data-edit]');if(!t)return;
+  const t=e.target.closest('button,[data-edit],[data-pick]');if(!t)return;
+  if(t.dataset.pick){S.sel.has(t.dataset.pick)?S.sel.delete(t.dataset.pick):S.sel.add(t.dataset.pick);return renderAdmin()}
+  if(t.id==='selOn'){S.sel=new Set();window.scrollTo(0,0);return renderAdmin()}
+  if(t.id==='selX'){S.sel=null;return renderAdmin()}
+  if(t.id==='selAll'){const l=byCls(sorted()).filter(x=>{const q=S.search.trim();return!q||(x.name||'').includes(q)||digits(x.phone).includes(digits(q)||'@')});const all=l.length&&l.every(x=>S.sel.has(x.id));l.forEach(x=>all?S.sel.delete(x.id):S.sel.add(x.id));return renderAdmin()}
+  if(t.id==='selDel'){if(busy||!S.sel.size)return;const names=S.students.filter(x=>S.sel.has(x.id)).map(x=>x.name);
+    const bg=sheet(`<h3>${names.length}명을 삭제할까요?</h3><div class="note" style="margin-top:0">${names.slice(0,30).map(esc).join(', ')}${names.length>30?' 외 '+(names.length-30)+'명':''}</div><div class="banner" style="margin-top:10px">측정 기록과 학부모 리포트도 함께 지워지고 되돌릴 수 없어요.</div><div class="row" style="margin-top:14px"><button class="btn ghost grow" id="dX">취소</button><button class="btn danger grow" id="dOk">${names.length}명 삭제</button></div>`);
+    bg.querySelector('#dX').onclick=()=>bg.remove();bg.querySelector('#dOk').onclick=()=>{bg.remove();deleteMany(new Set(S.sel))};return}
   if(t.dataset.cls!==undefined){if(S.tab==='quick')qDraft();S.cls=t.dataset.cls;return renderAdmin()}
   if(t.id==='newS')return studentSheet(null);
   if(t.dataset.edit)return studentSheet(t.dataset.edit);
