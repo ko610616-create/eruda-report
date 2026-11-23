@@ -315,6 +315,7 @@ const chips=()=>`<div class="chips">${['전체',...classes()].map(c=>`<button cl
 const recsOf=sid=>S.records.filter(r=>r.sid===sid).sort((a,b)=>a.date.localeCompare(b.date));
 
 function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
+ <a class="btn ghost full" href="guide.html" target="_blank" rel="noopener" style="display:block;text-decoration:none;margin-bottom:6px">📘 사범님 설명서 열기 (폰 입력 방법)</a>
  <details open><summary><span><span class="step">매달</span>측정부터 리포트까지</span></summary><ol>
   <li><b>측정하는 날 (사범님 폰)</b> — 측정 입력 탭 → 날짜 확인 → 부 선택 → "체력 항목도 입력" 체크 → 숫자 입력 → <b>한 번에 저장</b>. 안 잰 칸은 비워 두세요.</li>
   <li><b>측정이 다 끝나면 (PC)</b> — 에듀 › 측정 데이터에서 <b>올릴 날짜 화면</b>을 열고 <b>빈문서 출력</b>으로 파일 받기 → 측정 입력 탭 맨 아래 "에듀에 올릴 엑셀 만들기"에서 그 파일 고르기 → 내려받아진 파일을 에듀 <b>엑셀파일 업로드</b>에 올리기.</li>

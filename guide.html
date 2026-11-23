@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>이루다 사범님 측정 설명서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 폰 한 손 스크롤용 단일 컬럼. 도장 리플렛처럼 레드 배지 + 크림 바탕, 단계는 실제 순서라 번호를 씀 */
+:root{
+  --bg:#F8F4F0; --card:#FFFFFF; --ink:#2A2827; --muted:#75696A; --line:#E9DEDA;
+  --red:#A01E2C; --red-deep:#8E1623; --pink:#F7E3E3; --ok:#1E7F4E; --okbg:#E4F3EA;
+  --font:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1B1716; --card:#262120; --ink:#F1EAE7; --muted:#B5A8A6; --line:#3A3230;
+  --red:#E0525F; --red-deep:#F07E88; --pink:#3A2326; --ok:#6FCF9B; --okbg:#1D3428; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1B1716; --card:#262120; --ink:#F1EAE7; --muted:#B5A8A6; --line:#3A3230;
+  --red:#E0525F; --red-deep:#F07E88; --pink:#3A2326; --ok:#6FCF9B; --okbg:#1D3428; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header{padding-top:28px;text-align:center}
+.en{font-size:.72rem;letter-spacing:.24em;font-weight:700;color:var(--red)}
+.rule{display:flex;align-items:center;gap:12px;justify-content:center;margin:6px 0 4px}
+.rule:before,.rule:after{content:"";height:1.5px;width:56px;background:var(--red)}
+h1{font-size:1.65rem;font-weight:900;letter-spacing:-.03em;margin:0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--red)}
+.lead{color:var(--muted);margin:6px 0 0;font-size:.95rem}
+h2{font-size:1.2rem;font-weight:900;margin:0 0 10px;display:flex;align-items:center;gap:8px;text-wrap:balance}
+.tag{background:var(--red);color:#fff;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.02em}
+section{background:var(--card);border-radius:16px;padding:18px 16px;border:1px solid var(--line)}
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;counter-reset:s}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+ol.steps>li:before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--pink);color:var(--red);font-weight:900;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+ol.steps>li>div{min-width:0}
+b.k{color:var(--red)}
+.btnlike{display:inline-block;background:var(--red);color:#fff;border-radius:8px;padding:1px 8px;font-size:.88rem;font-weight:700;white-space:nowrap}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:0 9px;font-size:.85rem;white-space:nowrap}
+.chip.on{background:var(--red);border-color:var(--red);color:#fff}
+.addr{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px}
+.addr code{flex:1;min-width:0;word-break:break-all;font-size:.85rem}
+.addr button{border:0;background:var(--red);color:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
+.addr button:focus-visible{outline:3px solid var(--red-deep);outline-offset:2px}
+.note{font-size:.88rem;color:var(--muted);margin:6px 0 0}
+.box{background:var(--pink);border-radius:12px;padding:12px 14px;font-size:.93rem}
+.box.ok{background:var(--okbg)}
+.box b{color:var(--red)}.box.ok b{color:var(--ok)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:.78rem;color:var(--muted);font-weight:700}
+td.ex{font-weight:700;color:var(--red)}
+/* 폰 화면 그림 */
+.phone{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:10px;font-size:.8rem;margin-top:10px}
+.phone .bar{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--red);padding-bottom:6px;margin-bottom:8px;font-weight:700}
+.phone .row{display:grid;grid-template-columns:1fr 52px 52px 44px;gap:5px;align-items:center;padding:4px 0}
+.phone .row span.i{background:var(--card);border:1px solid var(--line);border-radius:6px;text-align:center;padding:2px 0;font-variant-numeric:tabular-nums}
+.phone .row.h{color:var(--muted);font-size:.72rem}
+.phone .save{margin-top:8px;background:var(--red);color:#fff;border-radius:8px;text-align:center;padding:6px;font-weight:700}
+.msg{border-left:4px solid var(--red);padding:2px 0 2px 12px;margin-top:12px}
+.msg:first-of-type{margin-top:0}
+.msg p{margin:2px 0 0;font-size:.93rem}
+.q{font-weight:700}
+ul.dot{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+footer{text-align:center;font-size:.85rem;color:var(--muted)}
+footer b{color:var(--red)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="en">ERUDA TAEKWONDO</div>
+  <div class="rule"><span style="font-weight:700">사범님 설명서</span></div>
+  <h1>측정하면서 <em>폰으로 바로</em> 입력해요</h1>
+  <p class="lead">기록지에 적었다가 옮겨 쓸 필요가 없어요. 사범님은 숫자만 넣으면 되고, 에듀 올리기는 관장님이 해요.</p>
+</header>
+
+<section>
+  <h2><span class="tag">처음 1번</span>폰에 준비하기</h2>
+  <ol class="steps">
+    <li><div><b>이 주소를 폰 크롬(또는 삼성 인터넷)으로 열어요.</b>
+      <div class="addr"><code id="adminUrl">https://ko610616-create.github.io/eruda-report/#admin</code><button type="button" id="copyBtn">복사</button></div>
+      <p class="note">끝에 <b>#admin</b>이 붙은 주소가 사범님용이에요. 학부모님께는 이 주소를 알려주지 마세요.</p></div></li>
+    <li><div><b>관장님께 받은 이메일·비밀번호로 로그인해요.</b><p class="note">계정이 없으면 관장님께 만들어 달라고 말씀하세요.</p></div></li>
+    <li><div><b>바탕화면에 아이콘 만들기</b> — 브라우저 메뉴(⋮ 또는 ≡) › <b class="k">홈 화면에 추가</b>. 다음부터는 아이콘만 누르면 바로 열려요.</div></li>
+  </ol>
+</section>
+
+<section>
+  <h2><span class="tag">측정하는 날</span>숫자 입력하기</h2>
+  <ol class="steps">
+    <li><div>아래 <b class="k">⚡ 측정 입력</b> 탭을 눌러요.</div></li>
+    <li><div>맨 위 <b>날짜</b>가 오늘인지 확인해요.</div></li>
+    <li><div>지금 수업하는 부를 눌러요. <span class="chip">2시부</span> <span class="chip on">3시부</span> <span class="chip">4시부</span></div></li>
+    <li><div>체력도 쟀으면 <b>"체력 항목도 입력"</b>에 체크해요. 칸이 옆으로 늘어나니 밀어서 넣어요.</div></li>
+    <li><div>아이 이름 옆 칸에 <b>숫자만</b> 넣어요. 안 잰 칸은 <b>비워 두면</b> 돼요.</div></li>
+    <li><div>다 넣었으면 <span class="btnlike">한 번에 저장</span>. "○명 저장했어요"가 뜨면 끝!</div></li>
+  </ol>
+  <div class="phone" aria-label="측정 입력 화면 예시">
+    <div class="bar"><span>측정 입력</span><span style="color:var(--muted);font-weight:500">2026-11-23</span></div>
+    <div class="row h"><span>이름 (예시)</span><span>키</span><span>몸무게</span><span>10m</span></div>
+    <div class="row"><span>김예시</span><span class="i">126.4</span><span class="i">26.1</span><span class="i">3.30</span></div>
+    <div class="row"><span>이하늘</span><span class="i">109.0</span><span class="i">18.7</span><span class="i">&nbsp;</span></div>
+    <div class="row"><span>박도윤</span><span class="i">&nbsp;</span><span class="i">&nbsp;</span><span class="i">&nbsp;</span></div>
+    <div class="save">한 번에 저장</div>
+  </div>
+  <p class="note">한 부씩 넣고 저장해도 되고, 여러 부를 넣고 마지막에 한 번 저장해도 돼요.</p>
+</section>
+
+<section>
+  <h2><span class="tag">단위</span>이렇게 넣어요</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>항목</th><th>단위</th><th>입력 예</th><th>넣을 수 있는 범위</th></tr></thead>
+    <tbody>
+      <tr><td>키</td><td>cm</td><td class="ex">135.4</td><td>50 ~ 220</td></tr>
+      <tr><td>몸무게</td><td>kg</td><td class="ex">31.7</td><td>5 ~ 150</td></tr>
+      <tr><td>10m 달리기</td><td>초</td><td class="ex">3.06</td><td>1 ~ 20</td></tr>
+      <tr><td>제자리멀리뛰기</td><td>cm</td><td class="ex">130</td><td>10 ~ 350</td></tr>
+      <tr><td>윗몸일으키기</td><td>회 (1분)</td><td class="ex">38</td><td>1 ~ 150</td></tr>
+      <tr><td>모아뛰기</td><td>회 (30초)</td><td class="ex">87</td><td>1 ~ 500</td></tr>
+      <tr><td>번갈아뛰기</td><td>회 (30초)</td><td class="ex">45</td><td>1 ~ 500</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box" style="margin-top:12px">자주 하는 실수: 10m 달리기 <b>3.06</b>을 <b>306</b>으로, 키 <b>135.4</b>를 <b>1354</b>로 넣는 것. 소수점을 꼭 찍어 주세요.</div>
+</section>
+
+<section>
+  <h2><span class="tag">고치기</span>잘못 넣었을 때</h2>
+  <ul class="dot">
+    <li><b>숫자 고치기</b>: 측정 입력에서 <b>그날 날짜</b>를 고르면 저장한 숫자가 칸에 나와요. 고치고 <span class="btnlike">한 번에 저장</span>.</li>
+    <li><b>숫자 지우기</b>: 그 칸을 <b>비우고</b> <span class="btnlike">한 번에 저장</span>. 한 아이 칸을 모두 비우면 그날 기록이 통째로 지워져요.</li>
+    <li>다른 날 기록을 고칠 때도 <b>날짜만 바꾸면</b> 똑같이 하면 돼요.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="tag">이런 창이 뜨면</span>당황하지 마세요</h2>
+  <div class="msg"><div class="q">"숫자를 확인해 주세요"</div>
+    <p>창에 <b>아이 이름 · 항목 · 넣은 숫자</b>가 나와요. 그 칸을 고치고 다시 저장하세요. 안 보이면 부 버튼에서 <b>전체</b>를 눌러 찾아요.</p></div>
+  <div class="msg"><div class="q">"저장하지 못했어요"</div>
+    <p>인터넷(와이파이·데이터)이 끊긴 거예요. 연결을 확인하고 다시 <b>한 번에 저장</b>을 눌러요. 넣은 숫자는 화면에 그대로 남아 있어요.</p></div>
+  <div class="msg"><div class="q">"권한이 없어요" / "로그인하지 못했어요"</div>
+    <p>계정 문제예요. 관장님께 말씀해 주세요.</p></div>
+  <div class="msg"><div class="q">"바뀐 내용이 없어요"</div>
+    <p>이미 저장된 그대로라는 뜻이에요. 걱정 안 하셔도 돼요.</p></div>
+</section>
+
+<section>
+  <h2><span class="tag">선택</span>사범님 한마디</h2>
+  <p style="margin:0">관장님이 부탁하시면 <b class="k">📊 리포트</b> 탭에서 아이마다 한 줄 칭찬을 적어 주세요. 적으면 바로 저장되고, 학부모님 리포트 맨 끝에 <b>"사범님 한마디"</b>로 나가요.</p>
+  <div class="box ok" style="margin-top:10px">예) <b>발차기 자세가 정말 좋아졌어요. 집에서도 스트레칭 꾸준히 해 주세요!</b></div>
+</section>
+
+<section>
+  <h2><span class="tag">관장님 담당</span>사범님은 안 해도 돼요</h2>
+  <ul class="dot">
+    <li>원생 명단 올리기 (에듀 엑셀)</li>
+    <li>측정이 끝난 뒤 에듀에 엑셀 올리기</li>
+    <li>학부모 리포트 올리기 · 공지 보내기</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="tag">꼭 지켜요</span>아이들 개인정보</h2>
+  <ul class="dot">
+    <li>키·몸무게는 아이 개인정보예요. 화면을 다른 학부모님께 보여주지 않아요.</li>
+    <li>로그인 비밀번호는 다른 사람과 나누지 않아요.</li>
+    <li>도장 공용 PC에서 썼다면 다 쓰고 오른쪽 위 <b class="k">로그아웃</b>.</li>
+  </ul>
+</section>
+
+<footer>막히면 화면을 캡처해서 관장님께 보내 주세요.<br><b>경희대 이루다 태권도</b> · 031-751-5812</footer>
+</div>
+
+<script>
+document.getElementById('copyBtn').addEventListener('click',function(){
+  var t=document.getElementById('adminUrl').textContent,b=this;
+  function sel(){var r=document.createRange();r.selectNodeContents(document.getElementById('adminUrl'));var s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='길게 눌러 복사';}
+  try{navigator.clipboard.writeText(t).then(function(){b.textContent='복사됨';setTimeout(function(){b.textContent='복사'},1600)},sel)}catch(e){sel()}
+});
+</script>
+</body>
+</html>
