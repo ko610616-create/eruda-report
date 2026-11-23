@@ -370,7 +370,7 @@ function vQuick(){
    ${l.length?l.map(s=>{const r=ex(s.id),d=(S.qd||{})[s.id]||{};return`<div class="qrow"><div style="flex:1;min-width:60px" class="name">${esc(s.name)}</div>${cols.map(c=>`<input type="number" inputmode="decimal" step="${c==='run'?0.01:0.1}" data-q="${s.id}" data-k="${c}" value="${esc(d[c]??r[c]??'')}" style="width:${c==='h'?74:64}px">`).join('')}</div>`}).join(''):'<div class="empty">원생을 먼저 등록해 주세요</div>'}
   </div></div>
   <button class="btn full" id="qSave" ${busy?'disabled':''}>${busy?'저장 중…':'한 번에 저장'}</button>
-  <div class="note">키 cm · 몸무게 kg · 10m 초 · 멀리뛰기 cm · 윗몸·모아·번갈아 회. 안 잰 칸은 비워 두거나 0을 넣으세요. 숫자가 이상하면 빨간 칸으로 알려줘요. 같은 날짜 기록은 덮어써요. 저장 후 "리포트" 탭에서 학부모에게 올려주세요.</div>
+  <div class="note">키 cm · 몸무게 kg · 10m 초 · 멀리뛰기 cm · 윗몸·모아·번갈아 회. 안 잰 칸은 비워 두거나 0을 넣으세요. 잘못 넣은 숫자는 칸을 지우고 저장하면 지워져요. 같은 날짜 기록은 덮어써요. 저장 후 "리포트" 탭에서 학부모에게 올려주세요.</div>
   <div class="card" style="margin-top:14px"><h2>📤 에듀에 올릴 엑셀 만들기</h2>
    <label>몇 월 기록을 보낼까요?</label><input type="month" id="eduMonth" value="${S.qdate.slice(0,7)}">
    <button class="btn full" id="eduGo" style="margin-top:10px">에듀 빈문서 골라서 만들기</button><input type="file" id="eduFile" accept=".xls,.xlsx" class="hide">
@@ -479,29 +479,37 @@ async function exportEdu(file,month){
     if(any)filled++}
   S.students.forEach(st=>{if(!used.has(st.id)&&recsOf(st.id).some(x=>x.date.startsWith(month)))miss.push(st.name)});
   if(!filled){toast(`${+month.slice(5)}월에 입력한 기록이 빈문서 아이들과 맞지 않아요`);return}
+  const sd=(sn.match(/(\d{4})-(\d{2})-(\d{2})/)||[]);const dTxt=sd[0]?`${+sd[2]}월 ${+sd[3]}일`:'';
   const name=`에듀업로드_${sn.replace(/[\\/:*?"<>|\s]+/g,'_')}.xls`;
   X.writeFile(wb,name,{bookType:'xls'});
   sheet(`<h3>엑셀을 만들었어요 ✅</h3><div class="fb" style="font-size:.9rem"><b>${filled}명</b> 기록을 채운 <b>${esc(name)}</b> 파일을 내려받았어요.
 이제 에듀 › 측정 데이터 › <b>엑셀파일 업로드</b>에서 이 파일을 올려 주세요.</div>
+  ${dTxt?`<div class="card" style="background:var(--pri-soft);margin:12px 0 0;text-align:center"><div class="meta">이 파일은 에듀의</div><div style="font-size:1.4rem;font-weight:800;color:var(--pri)">${dTxt} 측정 데이터</div><div class="meta">화면에 올려야 해요. 날짜가 다르면 그 날짜에서 빈문서를 다시 받아 주세요.</div></div>`:''}
   ${miss.length?`<div class="banner" style="margin-top:10px">⚠️ 빈문서에 없어서 못 넣은 원생 ${miss.length}명: ${miss.slice(0,8).map(esc).join(', ')}${miss.length>8?' 외':''}<br>에듀에 등록된 이름·학생번호와 같은지 확인해 주세요.</div>`:''}
   <button class="btn full" style="margin-top:14px" onclick="this.closest('.sheet-bg').remove()">확인</button>`)}
 function qDraft(){S.qd=S.qd||{};document.querySelectorAll('[data-q]').forEach(el=>{(S.qd[el.dataset.q]=S.qd[el.dataset.q]||{})[el.dataset.k]=el.value})}
 async function saveQuick(){
-  qDraft();const ops=[];let bad=0;const badMsg=[];const LAB={h:'키',w:'몸무게',...Object.fromEntries(FIT.map(f=>[f.k,f.l]))};
+  qDraft();const ops=[],dels=[];let bad=0;const badMsg=[];const LAB={h:'키',w:'몸무게',...Object.fromEntries(FIT.map(f=>[f.k,f.l]))};
   document.querySelectorAll('[data-q]').forEach(el=>el.style.borderColor='');
   for(const[sid,vals]of Object.entries(S.qd||{})){
-    const entries=Object.entries(vals).filter(([k,v])=>v!==''&&!(FI[k]&&+v===0));if(!entries.length)continue; // 체력 0 = 안 잼(에듀 방식)
-    const old=S.records.find(r=>r.sid===sid&&r.date===S.qdate);const o=old?{...old}:{id:uid(),sid,date:S.qdate};let ok=true;
+    const empty=([k,v])=>v===''||(FI[k]&&+v===0); // 빈칸·체력 0 = 안 잼(에듀 방식)
+    const entries=Object.entries(vals).filter(e=>!empty(e));
+    const old=S.records.find(r=>r.sid===sid&&r.date===S.qdate);if(!old&&!entries.length)continue;
+    const o=old?{...old}:{id:uid(),sid,date:S.qdate};let ok=true;
+    Object.entries(vals).filter(empty).forEach(([k])=>delete o[k]); // 칸을 비우고 저장하면 그 기록을 지움
     for(const[k,v]of entries){const n=+v;const lim=k==='h'?[50,220]:k==='w'?[5,150]:FI[k].lim;
       if(isNaN(n)||n<lim[0]||n>lim[1]){ok=false;const st=S.students.find(x=>x.id===sid);badMsg.push(`${st?st.name:'?'} ${LAB[k]} "${v}" (${lim[0]}~${lim[1]})`);const el=document.querySelector(`[data-q="${sid}"][data-k="${k}"]`);if(el)el.style.borderColor='var(--bad)';continue}
       o[k]=k==='h'||k==='w'?Math.round(n*10)/10:k==='run'?Math.round(n*100)/100:Math.round(n)}
     if(!ok){bad++;continue}
+    if(!['h','w',...FK].some(k=>has(o,k))){if(old)dels.push(old.id);continue}
     if(JSON.stringify(o)!==JSON.stringify(old||{}))ops.push(o)}
   if(bad){sheet(`<h3>숫자를 확인해 주세요</h3><div class="fb" style="font-size:.9rem">아래 칸이 범위를 벗어나서 저장하지 않았어요. 고친 뒤 다시 저장해 주세요.\n\n${badMsg.map(m=>'• '+esc(m)).join('\n')}</div><button class="btn full" style="margin-top:14px" onclick="this.closest('.sheet-bg').remove()">확인</button>`);return}
-  if(!ops.length){toast('바뀐 내용이 없어요');return}
+  if(!ops.length&&!dels.length){toast('바뀐 내용이 없어요');return}
   busy=true;renderAdmin();
-  try{for(let i=0;i<ops.length;i+=400){const b=F.writeBatch(db);ops.slice(i,i+400).forEach(o=>{const{id,...body}=o;b.set(F.doc(db,'records',id),body)});await b.commit()}
-    ops.forEach(o=>{const i=S.records.findIndex(r=>r.id===o.id);i>=0?S.records[i]=o:S.records.push(o)});S.qd={};toast(`${ops.length}명 저장했어요`)}catch(e){console.error(e);toast('저장하지 못했어요')}
+  try{const all=[...ops.map(o=>['set',o]),...dels.map(id=>['del',id])];
+    for(let i=0;i<all.length;i+=400){const b=F.writeBatch(db);all.slice(i,i+400).forEach(([t,x])=>{if(t==='del')b.delete(F.doc(db,'records',x));else{const{id,...body}=x;b.set(F.doc(db,'records',id),body)}});await b.commit()}
+    ops.forEach(o=>{const i=S.records.findIndex(r=>r.id===o.id);i>=0?S.records[i]=o:S.records.push(o)});S.records=S.records.filter(r=>!dels.includes(r.id));S.qd={};
+    toast([ops.length?`${ops.length}명 저장했어요`:'',dels.length?`${dels.length}명 기록을 지웠어요`:''].filter(Boolean).join(' · '))}catch(e){console.error(e);toast('저장하지 못했어요')}
   busy=false;renderAdmin()}
 async function publish(){
   const l=byCls(sorted()).filter(s=>recsOf(s.id).length&&s.phone);
