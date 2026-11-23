@@ -21,7 +21,7 @@
   --bg:#1B1716; --card:#262120; --ink:#F1EAE7; --muted:#B5A8A6; --line:#3A3230;
   --red:#E0525F; --red-deep:#F07E88; --pink:#3A2326; --ok:#6FCF9B; --okbg:#1D3428; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.65;
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
 .wrap{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
 header{padding-top:28px;text-align:center}
@@ -62,6 +62,17 @@ td.ex{font-weight:700;color:var(--red)}
 .phone .row span.i{background:var(--card);border:1px solid var(--line);border-radius:6px;text-align:center;padding:2px 0;font-variant-numeric:tabular-nums}
 .phone .row.h{color:var(--muted);font-size:.72rem}
 .phone .save{margin-top:8px;background:var(--red);color:#fff;border-radius:8px;text-align:center;padding:6px;font-weight:700}
+.why{display:flex;flex-direction:column;gap:12px}
+.why .it{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.why .ic{width:34px;height:34px;border-radius:10px;background:var(--pink);display:flex;align-items:center;justify-content:center;font-size:1.05rem}
+.why .it>div{min-width:0}
+.why p{margin:2px 0 0;font-size:.93rem;color:var(--muted)}
+.flow{display:grid;grid-template-columns:1fr;gap:6px;margin-top:12px;font-size:.9rem}
+.flow .node{border:1.5px solid var(--red);border-radius:10px;padding:8px 10px;text-align:center;font-weight:700;background:var(--card)}
+.flow .arrow{text-align:center;color:var(--red);font-weight:900;line-height:1}
+.flow .split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.flow .split .node{font-weight:500}
+.flow .split .node b{display:block;color:var(--red)}
 .msg{border-left:4px solid var(--red);padding:2px 0 2px 12px;margin-top:12px}
 .msg:first-of-type{margin-top:0}
 .msg p{margin:2px 0 0;font-size:.93rem}
@@ -81,6 +92,29 @@ footer b{color:var(--red)}
   <h1>측정하면서 <em>폰으로 바로</em> 입력해요</h1>
   <p class="lead">기록지에 적었다가 옮겨 쓸 필요가 없어요. 사범님은 숫자만 넣으면 되고, 에듀 올리기는 관장님이 해요.</p>
 </header>
+
+<section>
+  <h2><span class="tag">소개</span>이건 뭐예요?</h2>
+  <p style="margin:0"><b>이루다 성장 리포트</b>는 아이들 <b>키·몸무게·체력 측정 기록</b>을 사범님 폰으로 바로 입력하는 <b>우리 도장 전용 사이트</b>예요. 한 번 입력한 기록이 두 군데로 쓰여요.</p>
+  <div class="flow" aria-label="기록이 쓰이는 흐름">
+    <div class="node">사범님 폰으로 입력 (한 번)</div>
+    <div class="arrow">↓</div>
+    <div class="split">
+      <div class="node"><b>에듀패밀리</b>관장님이 엑셀로 한 번에 올려요</div>
+      <div class="node"><b>학부모 성장 리포트</b>이루다만의 리포트로 나가요</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="tag">이유</span>왜 만들었어요?</h2>
+  <div class="why">
+    <div class="it"><div class="ic">✍️</div><div><b>사범님 일을 줄이려고</b><p>지금은 기록지에 적고, 나중에 PC 앞에 앉아 에듀에 다시 입력해요. 에듀 폰 앱에는 체력 입력이 없어서요. 이제는 재면서 폰에 넣으면 끝이에요.</p></div></div>
+    <div class="it"><div class="ic">📈</div><div><b>아이가 자라는 걸 보여드리려고</b><p>학부모님 리포트에 "지난번보다 멀리뛰기 8cm 늘었어요"처럼 변화가 나오고, 약한 항목은 집에서 할 운동을 추천해요.</p></div></div>
+    <div class="it"><div class="ic">💬</div><div><b>사범님 마음을 전하려고</b><p>숫자는 에듀에도 있어요. 우리 리포트에는 <b>사범님 한마디</b>가 함께 나가요. "사범님이 우리 아이를 꾸준히 보고 계시는구나"를 느끼시게요.</p></div></div>
+    <div class="it"><div class="ic">🥋</div><div><b>이루다만의 리포트를 위해</b><p>어느 도장이나 쓰는 앱이 아니라, 이루다 엠블럼과 색으로 된 우리 도장 리포트예요.</p></div></div>
+  </div>
+</section>
 
 <section>
   <h2><span class="tag">처음 1번</span>폰에 준비하기</h2>
