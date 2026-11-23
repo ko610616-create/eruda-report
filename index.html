@@ -214,7 +214,6 @@ async function route(){
     return adminStart();
   }
   if(u&&u.email.endsWith('@'+PARENT_DOMAIN))return parentReport();
-  if(u&&!u.email.endsWith('@'+PARENT_DOMAIN)){location.hash='#admin';return}
   return parentLogin();
 }
 
@@ -224,7 +223,8 @@ async function route(){
 var pmode='login';
 function parentLogin(){
   setHeader(DOJO.name,false);$('#nav').classList.add('hide');
-  $('#view').innerHTML=`<div class="login"><div class="hero"><div class="em"><img src="${LOGO}" alt="ERUDA"></div><div class="en">ERUDA TAEKWONDO</div><h2>우리 아이 <em>성장</em> 리포트</h2><p>태권도로 꿈을 이루다</p></div><div class="card">
+  const asAdmin=S.user&&!S.user.email.endsWith('@'+PARENT_DOMAIN);
+  $('#view').innerHTML=`<div class="login">${asAdmin?`<div class="banner">지금 이 기기는 <b>관리자</b>로 로그인되어 있어요. 학부모 화면을 확인하려면 아래에서 학부모 정보로 로그인하세요.<div class="row" style="margin-top:8px"><a class="btn sm grow" href="#admin" style="text-decoration:none">관리자 화면으로</a></div></div>`:''}<div class="hero"><div class="em"><img src="${LOGO}" alt="ERUDA"></div><div class="en">ERUDA TAEKWONDO</div><h2>우리 아이 <em>성장</em> 리포트</h2><p>태권도로 꿈을 이루다</p></div><div class="card">
    <div class="seg"><button data-pm="login" class="${pmode==='login'?'on':''}">로그인</button><button data-pm="join" class="${pmode==='join'?'on':''}">처음 왔어요</button></div>
    <label>아이 이름</label><input id="pName" placeholder="예: 김다한" autocomplete="off">
    <label>보호자 휴대폰 번호 (도장에 등록한 번호)</label><input id="pPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000">
