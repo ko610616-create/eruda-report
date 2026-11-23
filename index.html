@@ -24,6 +24,8 @@ header button{background:var(--pri-soft);color:var(--pri);border:0;border-radius
 .up{color:var(--ok);font-weight:700}.fitrow{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}.fitrow:last-child{border-bottom:0}
 .tel{color:var(--pri);font-weight:800}
 main{max-width:640px;margin:0 auto;padding:14px 14px 96px}
+body.wide main{max-width:1000px}
+.qname{position:sticky;left:0;z-index:1;background:var(--card);padding-right:6px}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:6;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;background:none;padding:9px 0 8px;font-size:.74rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit}
 nav button .ic{font-size:1.25rem;line-height:1}
@@ -305,6 +307,7 @@ function renderAdmin(){
   $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-tab="${k}"><span class="ic">${i}</span>${l}</button>`).join('');
   $('#nav').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(S.tab==='quick')qDraft();S.sel=null;S.tab=b.dataset.tab;window.scrollTo(0,0);renderAdmin()});
   const active=document.activeElement&&document.activeElement.id,caret=active&&document.activeElement.selectionStart;
+  document.body.classList.toggle('wide',S.tab==='quick');
   $('#view').innerHTML={students:vStudents,quick:vQuick,report:vReport,help:vHelp}[S.tab]();
   if(active==='search'){const s=$('#search');if(s){s.focus();try{s.setSelectionRange(caret,caret)}catch(e){}}}
 }
@@ -375,8 +378,8 @@ function vQuick(){
   return`<input type="date" id="qDate" value="${S.qdate}" style="margin-bottom:10px">${chips()}
   <label style="display:flex;align-items:center;gap:8px;margin:0 0 10px"><input type="checkbox" id="qFit" ${S.qfit?'checked':''} style="width:auto"> 체력 항목도 입력 (10m·멀리뛰기·윗몸·모아·번갈아)</label>
   <div class="card" style="overflow-x:auto"><div style="min-width:${S.qfit?600:0}px">
-   <div class="qhead"><div style="flex:1">이름</div>${cols.map(c=>`<div style="width:${c==='h'?74:64}px;text-align:center">${lab[c]||c}</div>`).join('')}</div>
-   ${l.length?l.map(s=>{const r=ex(s.id),d=(S.qd||{})[s.id]||{};return`<div class="qrow"><div style="flex:1;min-width:60px" class="name">${esc(s.name)}</div>${cols.map(c=>`<input type="number" inputmode="decimal" step="${c==='run'?0.01:0.1}" data-q="${s.id}" data-k="${c}" value="${esc(d[c]??r[c]??'')}" style="width:${c==='h'?74:64}px">`).join('')}</div>`}).join(''):'<div class="empty">원생을 먼저 등록해 주세요</div>'}
+   <div class="qhead"><div class="qname" style="flex:1;min-width:64px">이름</div>${cols.map(c=>`<div style="width:${c==='h'?74:64}px;text-align:center">${lab[c]||c}</div>`).join('')}</div>
+   ${l.length?l.map(s=>{const r=ex(s.id),d=(S.qd||{})[s.id]||{};return`<div class="qrow"><div style="flex:1;min-width:64px" class="name qname">${esc(s.name)}</div>${cols.map(c=>`<input type="number" inputmode="decimal" step="${c==='run'?0.01:0.1}" data-q="${s.id}" data-k="${c}" value="${esc(d[c]??r[c]??'')}" style="width:${c==='h'?74:64}px">`).join('')}</div>`}).join(''):'<div class="empty">원생을 먼저 등록해 주세요</div>'}
   </div></div>
   <button class="btn full" id="qSave" ${busy?'disabled':''}>${busy?'저장 중…':'한 번에 저장'}</button>
   <div class="note">키 cm · 몸무게 kg · 10m 초 · 멀리뛰기 cm · 윗몸·모아·번갈아 회. 안 잰 칸은 비워 두거나 0을 넣으세요. 잘못 넣은 숫자는 칸을 지우고 저장하면 지워져요. 같은 날짜 기록은 덮어써요. 저장 후 "리포트" 탭에서 학부모에게 올려주세요.</div>
