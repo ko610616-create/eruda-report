@@ -701,7 +701,9 @@ $('#view').addEventListener('click',e=>{
 });
 $('#view').addEventListener('input',e=>{
   if(!isAdminPage())return;
-  if(e.target.id==='search'){S.search=e.target.value;renderAdmin()}
+  if(e.target.id==='search'){ // 검색칸은 그대로 두고 아래 목록만 새로 그림 (한글 조합이 끊기지 않게)
+    S.search=e.target.value;const v=$('#view'),tmp=document.createElement('div');tmp.innerHTML=vStudents();tmp.querySelector('#search').remove();
+    while(v.lastChild&&v.lastChild!==e.target)v.removeChild(v.lastChild);while(tmp.firstChild)v.appendChild(tmp.firstChild)}
   if(e.target.dataset.cm)saveComment(e.target.dataset.cm,e.target.value);
 });
 $('#view').addEventListener('change',e=>{
