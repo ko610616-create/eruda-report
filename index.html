@@ -350,6 +350,7 @@ function vBelt(){
    <button class="btn ghost full" id="bTarget" style="margin-top:8px">이번 달 승급 대상 모두 고르기 (${odd?'전체':'초등부'} ${S.students.filter(x=>canPromote(x,m)&&!(x.beltLog||[]).some(l=>l.m===m)).length}명)</button>
    <div class="note">심사에서 떨어진 원생은 고른 뒤 이름을 한 번 더 눌러 빼면 돼요.</div></div>
   ${BELT_ORDER.map(b=>{const l=withBelt.filter(x=>x.belt===b).sort((a,c)=>(a.name||'').localeCompare(c.name||'','ko'));if(!l.length&&beltIdx(b)>7)return'';
+    if(b==='빨간띠(1급)')return`<div class="card" style="padding:12px;border:2px dashed #C62828;background:var(--pri-soft)"><div class="row" style="margin-bottom:6px"><span style="width:34px;height:12px;border-radius:3px;background:${BELT_COLOR[b]};flex:none"></span><b class="grow">🎖 국기원 심사 대상 · 빨간띠(1급)</b><span class="meta">${l.length}명</span></div>${l.map(chip).join('')||'<span class="meta">없음</span>'}<div class="note">빨간띠가 되면 도장 승급에서 빠지고 국기원 심사 대상으로 모여요. 품·단을 받으면 원생 탭에서 띠를 품띠/검정띠로 바꿔 주세요.</div></div>`;
     return`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:6px"><span style="width:34px;height:12px;border-radius:3px;background:${BELT_COLOR[b]};border:1px solid #0002;flex:none"></span><b class="grow">${b}</b><span class="meta">${l.length}명</span><button class="btn ghost sm" data-ball="${b}">모두 고르기</button></div>${l.map(chip).join('')||'<span class="meta">없음</span>'}</div>`}).join('')}
   ${noBelt.length?`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:6px"><b class="grow">띠 미입력</b><span class="meta">${noBelt.length}명</span></div>${noBelt.map(chip).join('')}</div>`:''}
   <div class="card" style="position:sticky;bottom:70px;z-index:4;border:2px solid var(--pri)">
@@ -367,16 +368,17 @@ function beltText(m){
   let t=`🥋 경희대 이루다 태권도장\n${mo}월 띠 현황\n\n■ ${y}년 ${mo}월 (총 ${withBelt.length}명)\n`;
   if(!odd){const pn=promos.map(p=>p.s);t+=`※ 짝수 달이라 시상 없음${pn.length?` / 초등부 승급자 ${pn.length}명(${dispNames(pn).join(', ')})만 변동`:' / 초등부 승급자 없음'}\n`}
   t+='\n';
-  BELT_ORDER.forEach(b=>{const l=withBelt.filter(x=>x.belt===b);if(!l.length)return;
+  BELT_ORDER.forEach(b=>{if(b==='빨간띠(1급)')return;const l=withBelt.filter(x=>x.belt===b);if(!l.length)return;
     t+=`${b} : ${dispNames(l).join(', ')} — ${l.length}명\n\n`});
+  const reds=withBelt.filter(x=>x.belt==='빨간띠(1급)');
+  if(reds.length)t+=`🎖 국기원 심사 대상 · 빨간띠(1급) : ${dispNames(reds).join(', ')} — ${reds.length}명\n\n`;
   const a1=S.students.filter(x=>x.awards&&x.awards[m]==='우수상'),a2=S.students.filter(x=>x.awards&&x.awards[m]==='모범상');
   if(a1.length)t+=`🏆 우수상(트로피) : ${dispNames(a1).join(', ')} — ${a1.length}명\n`;
   if(a2.length)t+=`🥇 모범상(메달) : ${dispNames(a2).join(', ')} — ${a2.length}명\n`;
   const order={};promos.forEach(p=>{order[p.l.to]=(order[p.l.to]||0)+1});
   const ol=BELT_ORDER.filter(b=>order[b]).map(b=>`${BELT_SHORT[b]} ${order[b]}`);
   t+=`\n■ 띠 주문\n${mo}월 (${promos.length}개) : ${ol.join(', ')||'없음'}\n`;
-  const red=withBelt.filter(x=>x.belt==='빨간띠(1급)').length;
-  if(red)t+=`\n※ 1급(빨간띠) ${red}명은 국기원 심사 결과가 나오면 따로 안내드립니다.\n`;
+  if(reds.length)t+=`\n※ 1급(빨간띠) ${reds.length}명은 국기원 심사 대상이며, 심사 결과가 나오면 따로 안내드립니다.\n`;
   return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
 }
 async function beltSave(list){ // list: [{id, data}]
@@ -429,7 +431,7 @@ function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
   <li><b>이번 달 승급 대상 모두 고르기</b> → 심사에서 빠질 원생은 이름을 눌러 빼기 → <b>⬆ 한 단계 승급</b>. 잘못 누르면 <b>↩ 이번 달 승급 취소</b>.</li>
   <li>홀수 달은 수상자를 골라 <b>🏆 우수상</b> / <b>🥇 모범상</b>.</li>
   <li><b>📋 띠 현황 문구 만들기</b> → 복사 → 사범님 단톡·에듀에 붙여넣기. 띠 주문 수량도 같이 나와요.</li>
-  <li>1급(빨간띠) 다음은 국기원 심사라 자동 승급하지 않아요. 품·단을 받으면 원생 탭에서 띠를 바꿔 주세요.</li></ol></details>
+  <li>빨간띠(1급)가 되면 <b>국기원 심사 대상</b>으로 따로 모이고 도장 승급에서 빠져요. 품·단을 받으면 원생 탭에서 띠를 품띠/검정띠로 바꿔 주세요.</li></ol></details>
  <details><summary><span><span class="step">처음 1번</span>원생 명단 넣기</span></summary><ol>
   <li>에듀 PC › 원생 엑셀출력에서 <b>학생번호 · 원생이름 · 생일 · 성별 · 학년 · 부 · 부모1 전화번호</b>만 체크 → 엑셀 출력.</li>
   <li>원생 탭 › <b>에듀 원생 명단 엑셀 올리기</b> → 파일 선택 → 내용 확인 → 적용하기.</li>
