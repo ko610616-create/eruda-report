@@ -586,11 +586,12 @@ function vReport(){
   return`${chips()}<div class="card"><h2>📊 학부모 리포트 올리기</h2>
   <div class="note" style="margin-top:0">기록이 있는 ${pending.length}명의 리포트를 만들어 올려요. 학부모는 사이트 주소에서 아이 이름·번호·비밀번호로 자기 아이 것만 볼 수 있어요.</div>
   <button class="btn full" id="pub" style="margin-top:10px" ${busy||!pending.length?'disabled':''}>${busy?'올리는 중…':`${pending.length}명 리포트 올리기`}</button>
+  <button class="btn ghost full" id="reportCamera" style="margin-top:8px">📷 사진 촬영·업로드</button>
   <button class="btn ghost full" id="copyNotice" style="margin-top:8px">학부모 공지 문구 복사</button></div>
   ${pending.map(s=>{const rs=recsOf(s.id);return`<div class="card"><div class="row"><div class="av">${esc(given(s.name))}</div><div class="grow"><div class="name">${esc(s.name)}</div><div class="meta">${esc(s.phone||'⚠️ 번호 없음 — 학부모가 볼 수 없어요')} · ${s.publishedAt?'올림 '+esc(s.publishedAt.slice(5,10)):'아직 안 올림'}</div></div></div>
    <div class="fb meta" style="margin-top:8px">${esc(feedback(s,rs))}</div>
    <label>사범님 한마디 (선택, 리포트에 함께 나가요)</label><textarea data-cm="${s.id}" style="min-height:60px">${esc(s.comment||'')}</textarea>
-   ${s.phone&&s.publishedAt?`<button class="btn ghost full" style="margin-top:8px" data-photo="${esc(s.id)}">📷 사진 촬영·업로드</button>`:'<div class="note">학부모 리포트를 먼저 올리면 사진을 첨부할 수 있어요.</div>'}</div>`}).join('')||'<div class="card empty">측정 기록이 있는 원생이 없어요.<br>측정 입력 탭에서 숫자를 저장하면 여기에 아이별 피드백과 <b>사범님 한마디</b> 칸이 나와요.<br>(한마디는 원생 탭 › 아이 이름에서도 쓸 수 있어요)</div>'}`}
+   ${s.phone?`<button class="btn ghost full" style="margin-top:8px" data-photo="${esc(s.id)}">📷 사진 촬영·업로드</button>`:'<div class="note">보호자 번호를 등록하면 사진을 올릴 수 있어요.</div>'}</div>`}).join('')||'<div class="card empty">측정 기록이 있는 원생이 없어요.<br>측정 입력 탭에서 숫자를 저장하면 여기에 아이별 피드백과 <b>사범님 한마디</b> 칸이 나와요.<br>(한마디는 원생 탭 › 아이 이름에서도 쓸 수 있어요)</div>'}`}
 
 function reportPhoto(value){
   return typeof value==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(value);
@@ -616,11 +617,32 @@ async function compressReportPhoto(file){
   }finally{URL.revokeObjectURL(url)}
 }
 
+function pickReportStudent(){
+  if(busy)return;
+  const students=byCls(sorted()).filter(s=>s.phone);
+  if(!students.length){toast('먼저 원생과 보호자 번호를 등록해 주세요');return}
+  const bg=sheet(`<h3>사진을 올릴 원생</h3>
+    <label for="photoStudent">원생 선택</label><select id="photoStudent"><option value="">선택해 주세요</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)} · ${esc(s.cls||'반 미지정')} · 번호 끝 ${esc(digits(s.phone).slice(-4))}</option>`).join('')}</select>
+    <button class="btn full" style="margin-top:12px" id="photoNext">다음</button>`);
+  bg.querySelector('#photoNext').onclick=()=>{
+    const id=bg.querySelector('#photoStudent').value;
+    if(!id){toast('원생을 선택해 주세요');return}
+    bg.remove();
+    reportPhotoSheet(id);
+  };
+}
+
+function reportData(student,updatedAt){
+  const records=recsOf(student.id);
+  return {name:student.name,cls:student.cls||'',grade:student.grade||'',belt:student.belt||'',birth:student.birth||'',
+    records:records.map(({id,sid,...record})=>record),feedback:feedback(student,records),updatedAt};
+}
+
 function reportPhotoSheet(id){
   const student=S.students.find(s=>s.id===id);
-  if(!student?.phone||!student.publishedAt||busy)return;
+  if(!student?.phone||busy)return;
   const bg=sheet(`<h3>${esc(student.name)} 수련 사진</h3>
-    <div class="note">보호자 동의를 받은 사진을 올려 주세요. 촬영을 완료하거나 사진을 선택하면 이 아이의 학부모 리포트에 바로 표시돼요. 새 사진은 이전 사진을 교체해요.</div>
+    <div class="note">보호자 동의를 받은 사진을 올려 주세요. 촬영을 완료하거나 사진을 선택하면 이 아이의 학부모 리포트에 바로 표시돼요. 새 사진은 이전 사진을 교체해요. ${student.publishedAt?'': '처음 올리는 경우 학부모 리포트도 함께 공개돼요.'}</div>
     <div class="row" style="margin-top:12px"><button class="btn grow" data-open-camera>사진 촬영</button><button class="btn ghost grow" data-open-gallery>사진 선택</button></div>
     <input type="file" class="hide" data-camera accept="image/*" capture="environment">
     <input type="file" class="hide" data-gallery accept="image/*">
@@ -647,7 +669,17 @@ function reportPhotoSheet(id){
     try{
       const photo=await compressReportPhoto(file);
       const key=await parentKey(student.name,student.phone);
-      await F.updateDoc(F.doc(db,'reports',key),{photo});
+      const report=F.doc(db,'reports',key);
+      const now=new Date().toISOString();
+      if(student.publishedAt){
+        await F.updateDoc(report,{photo,updatedAt:now});
+      }else{
+        const batch=F.writeBatch(db);
+        batch.set(report,{...reportData(student,now),photo},{merge:true});
+        batch.update(F.doc(db,'students',id),{publishedAt:now});
+        await batch.commit();
+        student.publishedAt=now;
+      }
       bg.remove();
       toast('학부모 리포트에 사진을 올렸어요');
     }catch(error){
@@ -797,8 +829,8 @@ async function publish(){
   const l=byCls(sorted()).filter(s=>recsOf(s.id).length&&s.phone);
   busy=true;renderAdmin();const now=new Date().toISOString();
   try{for(let i=0;i<l.length;i+=200){const b=F.writeBatch(db);
-      for(const s of l.slice(i,i+200)){const rs=recsOf(s.id).map(({id,sid,...r})=>r);
-        b.set(F.doc(db,'reports',await parentKey(s.name,s.phone)),{name:s.name,cls:s.cls||'',grade:s.grade||'',belt:s.belt||'',birth:s.birth||'',records:rs,feedback:feedback(s,recsOf(s.id)),updatedAt:now},{merge:true});
+      for(const s of l.slice(i,i+200)){
+        b.set(F.doc(db,'reports',await parentKey(s.name,s.phone)),reportData(s,now),{merge:true});
         b.set(F.doc(db,'students',s.id),{...Object.fromEntries(Object.entries(s).filter(([k])=>k!=='id')),publishedAt:now})}
       await b.commit()}
     l.forEach(s=>s.publishedAt=now);toast(`${l.length}명 리포트를 올렸어요`)}catch(e){console.error(e);toast('올리지 못했어요')}
@@ -847,6 +879,7 @@ $('#view').addEventListener('click',e=>{
   if(t.id==='roster')return $('#rosterFile').click();
   if(t.id==='qSave')return saveQuick();
   if(t.id==='eduGo')return $('#eduFile').click();
+  if(t.id==='reportCamera')return pickReportStudent();
   if(t.dataset.photo)return reportPhotoSheet(t.dataset.photo);
   if(t.id==='pub')return publish();
   if(t.id==='copyNotice'){const url=location.href.split('#')[0];const txt=`[${DOJO.name}] 이번 달 우리 아이 성장 리포트가 나왔어요!\n\n아래 주소에서 아이 이름과 보호자 휴대폰 번호로 들어오시면 키·몸무게 변화, 체력 결과, 추천 운동을 보실 수 있어요.\n처음 오시면 "처음 왔어요"를 눌러 비밀번호를 만들어 주세요.\n\n👉 ${url}\n\n문의: ${DOJO.tel}`;
