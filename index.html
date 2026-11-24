@@ -222,7 +222,10 @@ const isAdminPage=()=>location.hash.startsWith('#admin');
 window.addEventListener('hashchange',()=>route());
 
 A.onAuthStateChanged(auth,u=>{S.user=u;route()});
+let stopParentReport;
 async function route(){
+  stopParentReport?.();
+  stopParentReport=undefined;
   const u=S.user;
   if(isAdminPage()){
     if(!u||u.email.endsWith('@'+PARENT_DOMAIN))return adminLogin();
@@ -272,10 +275,18 @@ async function parentReport(){
   setHeader(DOJO.name,true);$('#nav').classList.add('hide');
   $('#view').innerHTML='<div class="empty">리포트 불러오는 중…</div>';
   const key=S.user.email.split('@')[0];
-  let snap;try{snap=await F.getDoc(F.doc(db,'reports',key))}catch(e){snap=null}
-  if(!snap||!snap.exists()){
-    $('#view').innerHTML=`<div class="card"><h2>아직 리포트가 없어요</h2><div class="note">도장에서 측정 후 리포트를 올리면 여기서 볼 수 있어요.<br>아이 이름이나 번호를 다르게 입력하셨다면 로그아웃 후 다시 들어와 주세요.<br>문의: ${esc(DOJO.tel)}</div></div>`;return}
-  const r=snap.data();$('#view').innerHTML=reportHtml(r);bindReportStories(r);
+  stopParentReport=F.onSnapshot(F.doc(db,'reports',key),snap=>{
+    if(!snap.exists()){
+      $('#view').innerHTML='<div class="card"><h2>아직 리포트가 없어요</h2><div class="note">도장에서 수업 사진이나 성장 리포트를 올리면 여기서 볼 수 있어요.</div></div>';
+      return;
+    }
+    const report=snap.data();
+    $('#view').innerHTML=report.updatedAt?reportHtml(report):reportStoriesHtml(report);
+    bindReportStories(report);
+  },error=>{
+    console.error(error);
+    $('#view').innerHTML='<div class="card"><h2>리포트를 불러오지 못했어요</h2><div class="note">잠시 후 새로고침해 주세요.</div></div>';
+  });
 }
 function reportHtml(r){
   const recs=(r.records||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
@@ -586,7 +597,7 @@ function vReport(){
   return`${chips()}<div class="card"><h2>📊 학부모 리포트 올리기</h2>
   <div class="note" style="margin-top:0">기록이 있는 ${pending.length}명의 리포트를 만들어 올려요. 학부모는 사이트 주소에서 아이 이름·번호·비밀번호로 자기 아이 것만 볼 수 있어요.</div>
   <button class="btn full" id="pub" style="margin-top:10px" ${busy||!pending.length?'disabled':''}>${busy?'올리는 중…':`${pending.length}명 리포트 올리기`}</button>
-  <button class="btn ghost full" id="reportCamera" style="margin-top:8px">📷 수련 스토리 올리기</button>
+  <button class="btn ghost full" id="reportCamera" style="margin-top:8px">📷 수업 스토리 올리기</button>
   <button class="btn ghost full" id="copyNotice" style="margin-top:8px">학부모 공지 문구 복사</button></div>
   ${pending.map(s=>{const rs=recsOf(s.id);return`<div class="card"><div class="row"><div class="av">${esc(given(s.name))}</div><div class="grow"><div class="name">${esc(s.name)}</div><div class="meta">${esc(s.phone||'⚠️ 번호 없음 — 학부모가 볼 수 없어요')} · ${s.publishedAt?'올림 '+esc(s.publishedAt.slice(5,10)):'아직 안 올림'}</div></div></div>
    <div class="fb meta" style="margin-top:8px">${esc(feedback(s,rs))}</div>
@@ -606,8 +617,8 @@ function reportStories(report){
 
 function reportStoriesHtml(report){
   if(!reportStories(report).length)return '';
-  return `<section class="card" id="reportStories" aria-label="수련 스토리">
-    <h2>📸 수련 스토리</h2>
+  return `<section class="card" id="reportStories" aria-label="수업 스토리">
+    <h2>📸 수업 스토리</h2>
     <button class="btn ghost full" data-story-image aria-label="다음 사진" style="padding:0;overflow:hidden;background:var(--bg)">
       <img alt="수련 사진" style="display:block;width:100%;max-height:540px;object-fit:contain">
     </button>
@@ -633,7 +644,7 @@ function bindReportStories(report){
     const story=stories[index];
     image.src=story.photo;
     const date=story.createdAt?new Date(story.createdAt).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'}):'';
-    count.textContent=[`${index+1} / ${stories.length}`,date].filter(Boolean).join(' · ');
+    count.textContent=[`${index+1} / ${stories.length}`,story.audience,date].filter(Boolean).join(' · ');
     prev.disabled=index===0;
     next.disabled=index===stories.length-1;
     imageButton.disabled=stories.length===1;
@@ -664,36 +675,48 @@ async function compressReportPhoto(file){
   }finally{URL.revokeObjectURL(url)}
 }
 
-function pickReportStudent(){
+function pickClassStory(){
   if(busy)return;
-  const students=byCls(sorted()).filter(s=>s.phone);
+  const students=sorted().filter(student=>digits(student.phone).length>=10);
   if(!students.length){toast('먼저 원생과 보호자 번호를 등록해 주세요');return}
-  const bg=sheet(`<h3>사진을 올릴 원생</h3>
-    <label for="photoStudent">원생 선택</label><select id="photoStudent"><option value="">선택해 주세요</option>${students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)} · ${esc(s.cls||'반 미지정')} · 번호 끝 ${esc(digits(s.phone).slice(-4))}</option>`).join('')}</select>
+  const groups=new Map();
+  for(const student of students){
+    const name=student.cls||'반 미지정';
+    if(!groups.has(name))groups.set(name,[]);
+    groups.get(name).push(student);
+  }
+  const audiences=[['전체 원생',students],...groups];
+  const bg=sheet(`<h3>수업 스토리 올리기</h3>
+    <label for="storyClass">공유할 반</label>
+    <select id="storyClass"><option value="">선택해 주세요</option>${audiences.map(([name,members],index)=>`<option value="${index}">${esc(name)} · ${members.length}명</option>`).join('')}</select>
     <button class="btn full" style="margin-top:12px" id="photoNext">다음</button>`);
   bg.querySelector('#photoNext').onclick=()=>{
-    const id=bg.querySelector('#photoStudent').value;
-    if(!id){toast('원생을 선택해 주세요');return}
+    const index=bg.querySelector('#storyClass').value;
+    if(index===''){toast('공유할 반을 선택해 주세요');return}
+    const [name,members]=audiences[Number(index)];
     bg.remove();
-    reportPhotoSheet(id);
+    reportPhotoSheet(members,name);
   };
 }
-
 function reportData(student,updatedAt){
   const records=recsOf(student.id);
   return {name:student.name,cls:student.cls||'',grade:student.grade||'',belt:student.belt||'',birth:student.birth||'',
     records:records.map(({id,sid,...record})=>record),feedback:feedback(student,records),updatedAt};
 }
 
-function reportPhotoSheet(id){
-  const student=S.students.find(s=>s.id===id);
-  if(!student?.phone||busy)return;
-  const bg=sheet(`<h3>${esc(student.name)} 수련 사진</h3>
-    <div class="note">보호자 동의를 받은 사진을 올려 주세요. 촬영을 완료하거나 사진을 선택하면 이 아이의 학부모 리포트에 바로 표시돼요. 최근 사진 8장을 볼 수 있어요. ${student.publishedAt?'': '처음 올리는 경우 학부모 리포트도 함께 공개돼요.'}</div>
+function reportPhotoSheet(target,audience=''){
+  const group=Array.isArray(target);
+  let remaining=group?target:S.students.filter(s=>s.id===target&&s.phone);
+  if(!remaining.length||busy)return;
+  const title=group?audience:remaining[0].name;
+
+  const bg=sheet(`<h3>${esc(title)} ${group?'수업 스토리':'수련 사진'}</h3>
+    <div class="note">아이 얼굴이 나온 사진은 보호자 동의를 확인해 주세요. ${group?`촬영하거나 선택하면 ${esc(audience)} 학부모(${remaining.length}명)에게 바로 공유돼요.`:'촬영하거나 선택하면 이 아이의 학부모에게 바로 공유돼요.'} 최근 사진 8장을 볼 수 있어요.</div>
     <div class="row" style="margin-top:12px"><button class="btn grow" data-open-camera>사진 촬영</button><button class="btn ghost grow" data-open-gallery>사진 선택</button></div>
     <input type="file" class="hide" data-camera accept="image/*" capture="environment">
     <input type="file" class="hide" data-gallery accept="image/*">
     <div class="note" role="status" data-photo-status></div>
+    <button class="btn full hide" style="margin-top:8px" data-retry-photo>남은 학부모에게 다시 올리기</button>
     <button class="btn ghost full" style="margin-top:8px" data-close-photo>닫기</button>`);
   const camera=bg.querySelector('[data-camera]');
   const gallery=bg.querySelector('[data-gallery]');
@@ -704,46 +727,76 @@ function reportPhotoSheet(id){
   cameraButton.onclick=()=>camera.click();
   galleryButton.onclick=()=>gallery.click();
   closeButton.onclick=()=>bg.remove();
+  const retry=bg.querySelector('[data-retry-photo]');
   let uploading=false;
+  let story;
   bg.addEventListener('click',event=>{if(uploading&&event.target===bg)event.stopImmediatePropagation()},true);
-  camera.onchange=gallery.onchange=async(event)=>{
-    const file=event.target.files[0];
-    if(!file||uploading||!isAdminPage())return;
-    event.target.value='';
+  async function upload(file){
+    if(uploading||!isAdminPage())return;
     uploading=true;
-    cameraButton.disabled=galleryButton.disabled=closeButton.disabled=true;
+    cameraButton.disabled=galleryButton.disabled=closeButton.disabled=retry.disabled=true;
+    retry.classList.add('hide');
     status.textContent='사진 올리는 중…';
     try{
-      const photo=await compressReportPhoto(file);
-      const key=await parentKey(student.name,student.phone);
-      const report=F.doc(db,'reports',key);
-      const now=new Date().toISOString();
-      await F.runTransaction(db,async transaction=>{
-        const current=await transaction.get(report);
-        const stories=reportStories(current.exists()?current.data():{});
-        const nextStories=[{photo,createdAt:now},...stories].slice(0,REPORT_STORY_LIMIT);
-        if(current.exists()){
-          transaction.update(report,{stories:nextStories,photo:F.deleteField(),updatedAt:now});
-        }else{
-          transaction.set(report,{...reportData(student,now),stories:nextStories});
-        }
-        if(!student.publishedAt||!current.exists()){
-          transaction.update(F.doc(db,'students',id),{publishedAt:now});
-        }
-      });
-      student.publishedAt=student.publishedAt||now;
-      bg.remove();
-      toast('학부모 리포트에 사진을 올렸어요');
+      if(file){
+        story=undefined;
+        story={id:uid(),photo:await compressReportPhoto(file),createdAt:new Date().toISOString(),audience};
+      }
+      const failed=[];
+      const total=remaining.length;
+      for(let offset=0;offset<total;offset+=4){
+        const members=remaining.slice(offset,offset+4);
+        const results=await Promise.allSettled(members.map(student=>saveReportStory(student,story,group)));
+        results.forEach((result,index)=>{
+          if(result.status==='rejected'){
+            console.error(result.reason);
+            failed.push(members[index]);
+          }
+        });
+        status.textContent=`${Math.min(offset+members.length,total)-failed.length} / ${total}명 공유 완료`;
+      }
+      remaining=failed;
+      if(!remaining.length){
+        bg.remove();
+        toast(group?'학부모에게 수업 스토리를 올렸어요':'학부모 리포트에 사진을 올렸어요');
+        return;
+      }
+      status.textContent=`${remaining.length}명에게 사진을 올리지 못했어요. 이어서 다시 시도할 수 있어요.`;
+      retry.classList.remove('hide');
     }catch(error){
       console.error(error);
-      status.textContent='사진을 올리지 못했어요. 다른 사진을 선택하거나 다시 시도해 주세요.';
+      status.textContent='사진을 준비하지 못했어요. 다른 사진을 선택해 주세요.';
     }finally{
       uploading=false;
-      cameraButton.disabled=galleryButton.disabled=closeButton.disabled=false;
+      closeButton.disabled=retry.disabled=false;
+      cameraButton.disabled=galleryButton.disabled=Boolean(story);
     }
+  }
+  camera.onchange=gallery.onchange=event=>{
+    const file=event.target.files[0];
+    event.target.value='';
+    if(file)upload(file);
   };
+  retry.onclick=()=>upload();
 }
 
+async function saveReportStory(student,story,group){
+  const key=await parentKey(student.name,student.phone);
+  const report=F.doc(db,'reports',key);
+  await F.runTransaction(db,async transaction=>{
+    const snapshot=await transaction.get(report);
+    const current=snapshot.exists()?snapshot.data():{};
+    const stories=reportStories(current);
+    if(stories.some(item=>item.id===story.id))return;
+    const next=[story,...stories].sort((first,second)=>(second.createdAt||'').localeCompare(first.createdAt||'')).slice(0,REPORT_STORY_LIMIT);
+    const fields={stories:next};
+    if(reportPhoto(current.photo))fields.photo=F.deleteField();
+    if(!group&&!current.updatedAt)Object.assign(fields,reportData(student,story.createdAt));
+    transaction.set(report,fields,{merge:true});
+    if(!group&&!current.updatedAt)transaction.update(F.doc(db,'students',student.id),{publishedAt:story.createdAt});
+  });
+  if(!group)student.publishedAt=student.publishedAt||story.createdAt;
+}
 // ----- admin actions -----
 function sheet(html){const bg=document.createElement('div');bg.className='sheet-bg';bg.innerHTML=`<div class="sheet">${html}</div>`;bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});document.body.appendChild(bg);return bg}
 function studentSheet(id){
@@ -931,7 +984,7 @@ $('#view').addEventListener('click',e=>{
   if(t.id==='roster')return $('#rosterFile').click();
   if(t.id==='qSave')return saveQuick();
   if(t.id==='eduGo')return $('#eduFile').click();
-  if(t.id==='reportCamera')return pickReportStudent();
+  if(t.id==='reportCamera')return pickClassStory();
   if(t.dataset.photo)return reportPhotoSheet(t.dataset.photo);
   if(t.id==='pub')return publish();
   if(t.id==='copyNotice'){const url=location.href.split('#')[0];const txt=`[${DOJO.name}] 이번 달 우리 아이 성장 리포트가 나왔어요!\n\n아래 주소에서 아이 이름과 보호자 휴대폰 번호로 들어오시면 키·몸무게 변화, 체력 결과, 추천 운동을 보실 수 있어요.\n처음 오시면 "처음 왔어요"를 눌러 비밀번호를 만들어 주세요.\n\n👉 ${url}\n\n문의: ${DOJO.tel}`;
