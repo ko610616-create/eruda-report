@@ -82,6 +82,11 @@ svg text{font-family:inherit}
 .hide{display:none}
 .help details{border-bottom:1px solid var(--line);padding:10px 0}.help details:last-child{border-bottom:0}.help summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between}.help summary:after{content:'＋';color:var(--pri)}.help details[open] summary:after{content:'－'}.help ol,.help ul{margin:8px 0 0;padding-left:1.3em;line-height:1.7;font-size:.9rem}.help li b{color:var(--pri)}.step{display:inline-block;background:var(--pri);color:#fff;border-radius:6px;font-size:.7rem;font-weight:700;padding:1px 6px;margin-right:6px;vertical-align:1px}
 </style>
+<script>
+// 전각 숫자(０１０)로 입력돼도 보통 숫자로 바꿔 보여줌
+const toHalf=t=>{if(t&&t.type==='tel'){const v=t.value.normalize('NFKC').replace(/[^0-9-]/g,'');if(v!==t.value)t.value=v}};
+['input','change','compositionend','blur'].forEach(ev=>document.addEventListener(ev,e=>toHalf(e.target),true));
+</script>
 </head>
 <body>
 <header><h1 id="title">성장 리포트</h1><button id="logout" class="hide">로그아웃</button></header>
@@ -130,8 +135,8 @@ const fmt=(k,v)=>FI[k].d?(+v).toFixed(FI[k].d):String(Math.round(+v));
 function fitDiff(recs,k){const rs=recs.filter(r=>hv(r,k));if(rs.length<2)return null;const a=+rs[rs.length-2][k],b=+rs[rs.length-1][k];const d=b-a;return{raw:d,better:FI[k].low?-d:d,txt:fmt(k,Math.abs(d))+FI[k].u}}
 const bmi=r=>r&&r.h&&r.w?Math.round(r.w/((r.h/100)**2)*10)/10:null;
 function age(b){if(!b)return'';const d=new Date(b),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate()))a--;return isNaN(a)?'':a+'세'}
-const digits=s=>String(s||'').replace(/\D/g,'');
-const normName=s=>String(s||'').replace(/\s/g,'');
+const digits=s=>String(s||'').normalize('NFKC').replace(/\D/g,''); // 전각 숫자(０１０)도 인식
+const normName=s=>String(s||'').normalize('NFKC').replace(/\s/g,'');
 function given(name){const n=normName(name);return n.length>=3?n.slice(-2):n}
 function withI(n){const c=n.charCodeAt(n.length-1);return(c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28)?n+'이':n}
 async function parentKey(name,phone){
