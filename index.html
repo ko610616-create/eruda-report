@@ -387,6 +387,7 @@ function renderAdmin(){
   const active=document.activeElement&&document.activeElement.id,caret=active&&document.activeElement.selectionStart;
   document.body.classList.toggle('wide',S.tab==='quick');
   $('#view').innerHTML={students:vStudents,belt:vBelt,quick:vQuick,report:vReport,stories:vStories,help:vHelp}[S.tab]();
+  if(S.tab==='stories')loadAdminStories();
   if(active==='search'){const s=$('#search');if(s){s.focus();try{s.setSelectionRange(caret,caret)}catch(e){}}}
 }
 function classes(){const s=new Set(DEFAULT_CLS);S.students.forEach(x=>x.cls&&s.add(x.cls));return[...s].sort((a,b)=>(parseInt(a)||99)-(parseInt(b)||99)||a.localeCompare(b,'ko'))}
@@ -681,6 +682,7 @@ function reportStoriesHtml(stories,title='수업 스토리'){
       <div class="grow meta" role="status" style="text-align:center" data-story-count></div>
       <button class="btn ghost sm" data-story-next>다음</button>
     </div>
+    <a class="btn ghost full" data-story-download download="eruda-story.jpg" style="display:block;text-align:center;margin-top:8px;text-decoration:none">사진 다운로드</a>
   </section>`;
 }
 
@@ -697,6 +699,7 @@ function bindReportStories(stories,root=document){
   function show(){
     const story=stories[index];
     image.src=story.photo;
+    card.querySelector('[data-story-download]').href=story.photo;
     const date=story.createdAt?new Date(story.createdAt).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'}):'';
     count.textContent=[`${index+1} / ${stories.length}`,story.audience,date].filter(Boolean).join(' · ');
     prev.disabled=index===0;
@@ -717,7 +720,7 @@ async function compressReportPhoto(file){
     await image.decode();
     const canvas=document.createElement('canvas');
     const context=canvas.getContext('2d');
-    for(const maxSide of [1280,960,640]){
+    for(const maxSide of [1280,960,640,480,320]){
       const scale=Math.min(1,maxSide/Math.max(image.naturalWidth,image.naturalHeight));
       canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
       canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
@@ -729,14 +732,92 @@ async function compressReportPhoto(file){
   }finally{URL.revokeObjectURL(url)}
 }
 
+const storyRecipients=()=>sorted().filter(student=>digits(student.phone).length>=10);
+const adminStories=new Map();
+
+async function loadAdminStories(){
+  const panel=$('#adminStoryPosts');
+  if(!panel)return;
+  const snapshots=await Promise.allSettled(storyRecipients().slice(0,4).map(async student=>{
+    const key=await parentKey(student.name,student.phone);
+    return F.getDoc(F.doc(db,'reports',key));
+  }));
+  if($('#adminStoryPosts')!==panel)return;
+  for(const result of snapshots){
+    if(result.status!=='fulfilled'||!result.value.exists())continue;
+    for(const story of reportStories(result.value.data())){
+      if(story.audience&&story.id)adminStories.set(story.id,story);
+    }
+  }
+  const stories=reportStories({stories:[...adminStories.values()].sort((a,b)=>b.createdAt.localeCompare(a.createdAt))});
+  panel.innerHTML=stories.map(story=>{
+    const time=new Date(story.createdAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'});
+    return `<div class="row" style="margin-top:8px"><span class="grow">${esc(time)}</span><button class="btn ghost sm" data-view-story="${esc(story.id)}">보기</button><button class="btn danger sm" data-delete-story="${esc(story.id)}">삭제</button></div>`;
+  }).join('')||(snapshots.length&&snapshots.every(result=>result.status==='rejected')?'스토리를 불러오지 못했어요.':'현재 올라온 수업 스토리가 없어요.');
+}
+
+function viewAdminStory(id){
+  const stories=reportStories({stories:[adminStories.get(id)]});
+  if(!stories.length){loadAdminStories();return}
+  const bg=sheet(reportStoriesHtml(stories)+'<button class="btn ghost full" data-story-close>닫기</button>');
+  bindReportStories(stories,bg);
+  bg.querySelector('[data-story-close]').onclick=()=>bg.remove();
+}
+
+async function removeStory(student,id){
+  const key=await parentKey(student.name,student.phone);
+  const ref=F.doc(db,'reports',key);
+  await F.runTransaction(db,async transaction=>{
+    const snapshot=await transaction.get(ref);
+    if(!snapshot.exists())return;
+    const stories=snapshot.data().stories;
+    if(!Array.isArray(stories))return;
+    const kept=stories.filter(story=>!(story?.id===id&&story.audience));
+    if(kept.length!==stories.length)transaction.update(ref,{stories:kept});
+  });
+}
+
+function deleteAdminStory(id){
+  if(!adminStories.has(id))return;
+  const bg=sheet('<h3>수업 스토리를 삭제할까요?</h3><div class="note">학부모 화면에서도 사진이 내려가요.</div><div class="note" role="status" data-status></div><div class="row" style="margin-top:12px"><button class="btn ghost grow" data-cancel>닫기</button><button class="btn danger grow" data-confirm>삭제</button></div>');
+  const button=bg.querySelector('[data-confirm]');
+  const cancel=bg.querySelector('[data-cancel]');
+  const status=bg.querySelector('[data-status]');
+  let pending=storyRecipients();
+  cancel.onclick=()=>bg.remove();
+  bg.addEventListener('click',event=>{if(button.disabled&&event.target===bg)event.stopImmediatePropagation()},true);
+  button.onclick=async()=>{
+    if(!isAdminPage())return;
+    button.disabled=cancel.disabled=true;
+    status.textContent='삭제 중…';
+    const failed=[];
+    for(let offset=0;offset<pending.length;offset+=4){
+      const chunk=pending.slice(offset,offset+4);
+      const results=await Promise.allSettled(chunk.map(student=>removeStory(student,id)));
+      results.forEach((result,index)=>{if(result.status==='rejected')failed.push(chunk[index])});
+    }
+    pending=failed;
+    if(!pending.length){
+      adminStories.delete(id);
+      bg.remove();
+      loadAdminStories();
+      toast('수업 스토리를 삭제했어요');
+      return;
+    }
+    status.textContent=`${pending.length}명 화면에서 삭제하지 못했어요. 다시 시도해 주세요.`;
+    button.textContent='다시 시도';
+    button.disabled=cancel.disabled=false;
+  };
+}
+
 function vStories(){
-  const count=S.students.filter(student=>digits(student.phone).length>=10).length;
+  const count=storyRecipients().length;
   return `<div class="card">
     <h2>📸 수업 스토리</h2>
     <div class="note">수업 사진은 학부모의 수업 스토리에서 24시간 동안 볼 수 있어요.</div>
     <button class="btn full" style="margin-top:12px" id="reportCamera" ${busy||!count?'disabled':''}>사진 촬영·올리기</button>
     ${count?'':'<div class="note">먼저 원생과 보호자 번호를 등록해 주세요.</div>'}
-  </div>`;
+  </div><div class="card"><h2>올린 스토리</h2><div class="note" id="adminStoryPosts">불러오는 중…</div></div>`;
 }
 function reportData(student,updatedAt){
   const records=recsOf(student.id);
@@ -794,6 +875,10 @@ function reportPhotoSheet(target,audience=''){
           }
         });
         status.textContent=`${Math.min(offset+members.length,total)-failed.length} / ${total}명 공유 완료`;
+      }
+      if(group&&failed.length<total){
+        adminStories.set(story.id,story);
+        loadAdminStories();
       }
       remaining=failed;
       if(!remaining.length){
@@ -1024,7 +1109,9 @@ $('#view').addEventListener('click',e=>{
   if(t.id==='roster')return $('#rosterFile').click();
   if(t.id==='qSave')return saveQuick();
   if(t.id==='eduGo')return $('#eduFile').click();
-  if(t.id==='reportCamera')return reportPhotoSheet(sorted().filter(student=>digits(student.phone).length>=10),'전체 수업');
+  if(t.dataset.viewStory)return viewAdminStory(t.dataset.viewStory);
+  if(t.dataset.deleteStory)return deleteAdminStory(t.dataset.deleteStory);
+  if(t.id==='reportCamera')return reportPhotoSheet(storyRecipients(),'전체 수업');
   if(t.dataset.photo)return reportPhotoSheet(t.dataset.photo);
   if(t.id==='pub')return publish();
   if(t.id==='copyNotice'){const url=location.href.split('#')[0];const txt=`[${DOJO.name}] 이번 달 우리 아이 성장 리포트가 나왔어요!\n\n아래 주소에서 아이 이름과 보호자 휴대폰 번호로 들어오시면 키·몸무게 변화, 체력 결과, 추천 운동을 보실 수 있어요.\n처음 오시면 "처음 왔어요"를 눌러 비밀번호를 만들어 주세요.\n\n👉 ${url}\n\n문의: ${DOJO.tel}`;
