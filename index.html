@@ -271,24 +271,48 @@ function parentLogin(){
       $('#pGo').disabled=false}
   }}
 
-async function parentReport(){
-  setHeader(DOJO.name,true);$('#nav').classList.add('hide');
-  $('#view').innerHTML='<div class="empty">리포트 불러오는 중…</div>';
+function parentReport(){
+  setHeader(DOJO.name,true);
+  const nav=$('#nav');
+  nav.classList.remove('hide');
+  nav.innerHTML='<button data-parent-tab="report"><span class="ic">📊</span>성장 리포트</button><button data-parent-tab="stories"><span class="ic">📸</span>수업 스토리</button>';
+  let active='report';
+  let report;
+  let failed=false;
+  function render(){
+    nav.querySelectorAll('[data-parent-tab]').forEach(button=>{
+      const selected=button.dataset.parentTab===active;
+      button.classList.toggle('on',selected);
+      button.setAttribute('aria-pressed',String(selected));
+    });
+    const view=$('#view');
+    if(failed){view.innerHTML='<div class="card empty">불러오지 못했어요. 새로고침해 주세요.</div>';return}
+    if(!report){view.innerHTML='<div class="empty">불러오는 중…</div>';return}
+    const group=active==='stories';
+    const stories=reportStories(report).filter(story=>Boolean(story.audience)===group);
+    view.innerHTML=group
+      ?reportStoriesHtml(stories)||'<div class="card empty">아직 올라온 수업 스토리가 없어요.</div>'
+      :report.updatedAt?reportHtml(report,stories):'<div class="card empty">아직 올라온 성장 리포트가 없어요.</div>';
+    bindReportStories(stories);
+  }
+  nav.querySelectorAll('[data-parent-tab]').forEach(button=>button.onclick=()=>{
+    active=button.dataset.parentTab;
+    window.scrollTo(0,0);
+    render();
+  });
+  render();
   const key=S.user.email.split('@')[0];
   stopParentReport=F.onSnapshot(F.doc(db,'reports',key),snap=>{
-    if(!snap.exists()){
-      $('#view').innerHTML='<div class="card"><h2>아직 리포트가 없어요</h2><div class="note">도장에서 수업 사진이나 성장 리포트를 올리면 여기서 볼 수 있어요.</div></div>';
-      return;
-    }
-    const report=snap.data();
-    $('#view').innerHTML=report.updatedAt?reportHtml(report):reportStoriesHtml(report);
-    bindReportStories(report);
+    report=snap.exists()?snap.data():{};
+    failed=false;
+    render();
   },error=>{
     console.error(error);
-    $('#view').innerHTML='<div class="card"><h2>리포트를 불러오지 못했어요</h2><div class="note">잠시 후 새로고침해 주세요.</div></div>';
+    failed=true;
+    render();
   });
 }
-function reportHtml(r){
+function reportHtml(r,stories){
   const recs=(r.records||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
   const body=recs.filter(x=>has(x,'h')||has(x,'w')),b=body[body.length-1],p=body[body.length-2];
   const f=[...recs].reverse().find(hasFit);
@@ -300,7 +324,7 @@ function reportHtml(r){
   return`<div class="card"><div class="row"><div class="av">${esc(given(r.name))}</div><div class="grow"><div class="name">${esc(r.name)}</div><div class="meta">${[r.grade,r.belt,age(r.birth)].filter(Boolean).map(esc).join(' · ')}</div></div><div class="meta">업데이트<br>${esc((r.updatedAt||'').slice(0,10))}</div></div></div>
   ${b?`<div class="stats"><div class="stat"><b>${b.h??'-'}</b><span>키 cm ${d(b,'h','cm')}</span></div><div class="stat"><b>${b.w??'-'}</b><span>몸무게 kg ${d(b,'w','kg')}</span></div><div class="stat"><b>${bmi(b)??'-'}</b><span>BMI</span></div></div>`:''}
   <div class="card"><h2>💬 이번 달 피드백</h2><div class="fb">${esc(r.feedback||'')}</div></div>
-  ${reportStoriesHtml(r)}
+  ${reportStoriesHtml(stories,'수련 사진')}
   ${f?`<div class="card"><h2>💪 체력 측정 <span class="meta">${esc(f.date)}</span></h2>${fitRows}</div>`:''}
   ${weak.length?`<div class="card" style="background:var(--pri-soft)"><h2>🏃 집에서 해보는 추천 운동 <span class="meta">주 3회</span></h2>${weak.map(k=>`<div style="margin-top:6px"><b>${FI[k].l} 키우기</b><ul style="margin:4px 0 0;padding-left:1.2em">${EX[k].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`:''}
   ${body.length?`<div class="card"><h2>📏 키 변화 (cm)</h2>${trend(recs,'h','#A01E2C','키')}<h2 style="margin-top:14px">⚖️ 몸무게 변화 (kg)</h2>${trend(recs,'w','#8C6A6F','몸무게')}</div>`:''}
@@ -326,14 +350,14 @@ async function adminStart(){
 async function loadAll(){
   const [s,r]=await Promise.all([F.getDocs(F.collection(db,'students')),F.getDocs(F.collection(db,'records'))]);
   S.students=s.docs.map(d=>({id:d.id,...d.data()}));S.records=r.docs.map(d=>({id:d.id,...d.data()}))}
-const TABS=[['students','👥','원생'],['belt','🥋','띠 관리'],['quick','⚡','측정 입력'],['report','📊','리포트'],['help','❓','사용법']];
+const TABS=[['students','👥','원생'],['belt','🥋','띠 관리'],['quick','⚡','측정 입력'],['report','📊','리포트'],['stories','📸','수업 스토리'],['help','❓','사용법']];
 function renderAdmin(){
   $('#nav').classList.remove('hide');
   $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-tab="${k}"><span class="ic">${i}</span>${l}</button>`).join('');
   $('#nav').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(S.tab==='quick')qDraft();S.sel=null;S.tab=b.dataset.tab;window.scrollTo(0,0);renderAdmin()});
   const active=document.activeElement&&document.activeElement.id,caret=active&&document.activeElement.selectionStart;
   document.body.classList.toggle('wide',S.tab==='quick');
-  $('#view').innerHTML={students:vStudents,belt:vBelt,quick:vQuick,report:vReport,help:vHelp}[S.tab]();
+  $('#view').innerHTML={students:vStudents,belt:vBelt,quick:vQuick,report:vReport,stories:vStories,help:vHelp}[S.tab]();
   if(active==='search'){const s=$('#search');if(s){s.focus();try{s.setSelectionRange(caret,caret)}catch(e){}}}
 }
 function classes(){const s=new Set(DEFAULT_CLS);S.students.forEach(x=>x.cls&&s.add(x.cls));return[...s].sort((a,b)=>(parseInt(a)||99)-(parseInt(b)||99)||a.localeCompare(b,'ko'))}
@@ -597,7 +621,6 @@ function vReport(){
   return`${chips()}<div class="card"><h2>📊 학부모 리포트 올리기</h2>
   <div class="note" style="margin-top:0">기록이 있는 ${pending.length}명의 리포트를 만들어 올려요. 학부모는 사이트 주소에서 아이 이름·번호·비밀번호로 자기 아이 것만 볼 수 있어요.</div>
   <button class="btn full" id="pub" style="margin-top:10px" ${busy||!pending.length?'disabled':''}>${busy?'올리는 중…':`${pending.length}명 리포트 올리기`}</button>
-  <button class="btn ghost full" id="reportCamera" style="margin-top:8px">📷 수업 스토리 올리기</button>
   <button class="btn ghost full" id="copyNotice" style="margin-top:8px">학부모 공지 문구 복사</button></div>
   ${pending.map(s=>{const rs=recsOf(s.id);return`<div class="card"><div class="row"><div class="av">${esc(given(s.name))}</div><div class="grow"><div class="name">${esc(s.name)}</div><div class="meta">${esc(s.phone||'⚠️ 번호 없음 — 학부모가 볼 수 없어요')} · ${s.publishedAt?'올림 '+esc(s.publishedAt.slice(5,10)):'아직 안 올림'}</div></div></div>
    <div class="fb meta" style="margin-top:8px">${esc(feedback(s,rs))}</div>
@@ -615,10 +638,10 @@ function reportStories(report){
   return stories.slice(0,REPORT_STORY_LIMIT);
 }
 
-function reportStoriesHtml(report){
-  if(!reportStories(report).length)return '';
-  return `<section class="card" id="reportStories" aria-label="수업 스토리">
-    <h2>📸 수업 스토리</h2>
+function reportStoriesHtml(stories,title='수업 스토리'){
+  if(!stories.length)return '';
+  return `<section class="card" id="reportStories" aria-label="${esc(title)}">
+    <h2>📸 ${esc(title)}</h2>
     <button class="btn ghost full" data-story-image aria-label="다음 사진" style="padding:0;overflow:hidden;background:var(--bg)">
       <img alt="수련 사진" style="display:block;width:100%;max-height:540px;object-fit:contain">
     </button>
@@ -630,10 +653,10 @@ function reportStoriesHtml(report){
   </section>`;
 }
 
-function bindReportStories(report){
+function bindReportStories(stories){
   const card=$('#reportStories');
   if(!card)return;
-  const stories=reportStories(report);
+
   const imageButton=card.querySelector('[data-story-image]');
   const image=card.querySelector('img');
   const count=card.querySelector('[data-story-count]');
@@ -675,28 +698,14 @@ async function compressReportPhoto(file){
   }finally{URL.revokeObjectURL(url)}
 }
 
-function pickClassStory(){
-  if(busy)return;
-  const students=sorted().filter(student=>digits(student.phone).length>=10);
-  if(!students.length){toast('먼저 원생과 보호자 번호를 등록해 주세요');return}
-  const groups=new Map();
-  for(const student of students){
-    const name=student.cls||'반 미지정';
-    if(!groups.has(name))groups.set(name,[]);
-    groups.get(name).push(student);
-  }
-  const audiences=[['전체 원생',students],...groups];
-  const bg=sheet(`<h3>수업 스토리 올리기</h3>
-    <label for="storyClass">공유할 반</label>
-    <select id="storyClass"><option value="">선택해 주세요</option>${audiences.map(([name,members],index)=>`<option value="${index}">${esc(name)} · ${members.length}명</option>`).join('')}</select>
-    <button class="btn full" style="margin-top:12px" id="photoNext">다음</button>`);
-  bg.querySelector('#photoNext').onclick=()=>{
-    const index=bg.querySelector('#storyClass').value;
-    if(index===''){toast('공유할 반을 선택해 주세요');return}
-    const [name,members]=audiences[Number(index)];
-    bg.remove();
-    reportPhotoSheet(members,name);
-  };
+function vStories(){
+  const count=S.students.filter(student=>digits(student.phone).length>=10).length;
+  return `<div class="card">
+    <h2>📸 수업 스토리</h2>
+    <div class="note">촬영하거나 선택한 수업 사진을 등록된 전체 학부모에게 공유해요.</div>
+    <button class="btn full" style="margin-top:12px" id="reportCamera" ${busy||!count?'disabled':''}>사진 촬영·올리기</button>
+    ${count?'':'<div class="note">먼저 원생과 보호자 번호를 등록해 주세요.</div>'}
+  </div>`;
 }
 function reportData(student,updatedAt){
   const records=recsOf(student.id);
@@ -711,7 +720,7 @@ function reportPhotoSheet(target,audience=''){
   const title=group?audience:remaining[0].name;
 
   const bg=sheet(`<h3>${esc(title)} ${group?'수업 스토리':'수련 사진'}</h3>
-    <div class="note">아이 얼굴이 나온 사진은 보호자 동의를 확인해 주세요. ${group?`촬영하거나 선택하면 ${esc(audience)} 학부모(${remaining.length}명)에게 바로 공유돼요.`:'촬영하거나 선택하면 이 아이의 학부모에게 바로 공유돼요.'} 최근 사진 8장을 볼 수 있어요.</div>
+    <div class="note">아이 얼굴이 나온 사진은 보호자 동의를 확인해 주세요. ${group?`촬영하거나 선택하면 전체 학부모(${remaining.length}명)에게 바로 공유돼요.`:'촬영하거나 선택하면 이 아이의 학부모에게 바로 공유돼요.'} 최근 사진 8장을 볼 수 있어요.</div>
     <div class="row" style="margin-top:12px"><button class="btn grow" data-open-camera>사진 촬영</button><button class="btn ghost grow" data-open-gallery>사진 선택</button></div>
     <input type="file" class="hide" data-camera accept="image/*" capture="environment">
     <input type="file" class="hide" data-gallery accept="image/*">
@@ -984,7 +993,7 @@ $('#view').addEventListener('click',e=>{
   if(t.id==='roster')return $('#rosterFile').click();
   if(t.id==='qSave')return saveQuick();
   if(t.id==='eduGo')return $('#eduFile').click();
-  if(t.id==='reportCamera')return pickClassStory();
+  if(t.id==='reportCamera')return reportPhotoSheet(sorted().filter(student=>digits(student.phone).length>=10),'전체 수업');
   if(t.dataset.photo)return reportPhotoSheet(t.dataset.photo);
   if(t.id==='pub')return publish();
   if(t.id==='copyNotice'){const url=location.href.split('#')[0];const txt=`[${DOJO.name}] 이번 달 우리 아이 성장 리포트가 나왔어요!\n\n아래 주소에서 아이 이름과 보호자 휴대폰 번호로 들어오시면 키·몸무게 변화, 체력 결과, 추천 운동을 보실 수 있어요.\n처음 오시면 "처음 왔어요"를 눌러 비밀번호를 만들어 주세요.\n\n👉 ${url}\n\n문의: ${DOJO.tel}`;
