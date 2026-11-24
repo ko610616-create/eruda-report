@@ -289,6 +289,7 @@ function reportHtml(r){
   return`<div class="card"><div class="row"><div class="av">${esc(given(r.name))}</div><div class="grow"><div class="name">${esc(r.name)}</div><div class="meta">${[r.grade,r.belt,age(r.birth)].filter(Boolean).map(esc).join(' · ')}</div></div><div class="meta">업데이트<br>${esc((r.updatedAt||'').slice(0,10))}</div></div></div>
   ${b?`<div class="stats"><div class="stat"><b>${b.h??'-'}</b><span>키 cm ${d(b,'h','cm')}</span></div><div class="stat"><b>${b.w??'-'}</b><span>몸무게 kg ${d(b,'w','kg')}</span></div><div class="stat"><b>${bmi(b)??'-'}</b><span>BMI</span></div></div>`:''}
   <div class="card"><h2>💬 이번 달 피드백</h2><div class="fb">${esc(r.feedback||'')}</div></div>
+  ${reportPhoto(r.photo)?`<div class="card"><h2>수련 사진</h2><img src="${r.photo}" alt="수련 사진" style="display:block;max-width:100%;max-height:540px;border-radius:10px;margin:auto"></div>`:''}
   ${f?`<div class="card"><h2>💪 체력 측정 <span class="meta">${esc(f.date)}</span></h2>${fitRows}</div>`:''}
   ${weak.length?`<div class="card" style="background:var(--pri-soft)"><h2>🏃 집에서 해보는 추천 운동 <span class="meta">주 3회</span></h2>${weak.map(k=>`<div style="margin-top:6px"><b>${FI[k].l} 키우기</b><ul style="margin:4px 0 0;padding-left:1.2em">${EX[k].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`:''}
   ${body.length?`<div class="card"><h2>📏 키 변화 (cm)</h2>${trend(recs,'h','#A01E2C','키')}<h2 style="margin-top:14px">⚖️ 몸무게 변화 (kg)</h2>${trend(recs,'w','#8C6A6F','몸무게')}</div>`:''}
@@ -588,7 +589,76 @@ function vReport(){
   <button class="btn ghost full" id="copyNotice" style="margin-top:8px">학부모 공지 문구 복사</button></div>
   ${pending.map(s=>{const rs=recsOf(s.id);return`<div class="card"><div class="row"><div class="av">${esc(given(s.name))}</div><div class="grow"><div class="name">${esc(s.name)}</div><div class="meta">${esc(s.phone||'⚠️ 번호 없음 — 학부모가 볼 수 없어요')} · ${s.publishedAt?'올림 '+esc(s.publishedAt.slice(5,10)):'아직 안 올림'}</div></div></div>
    <div class="fb meta" style="margin-top:8px">${esc(feedback(s,rs))}</div>
-   <label>사범님 한마디 (선택, 리포트에 함께 나가요)</label><textarea data-cm="${s.id}" style="min-height:60px">${esc(s.comment||'')}</textarea></div>`}).join('')||'<div class="card empty">측정 기록이 있는 원생이 없어요.<br>측정 입력 탭에서 숫자를 저장하면 여기에 아이별 피드백과 <b>사범님 한마디</b> 칸이 나와요.<br>(한마디는 원생 탭 › 아이 이름에서도 쓸 수 있어요)</div>'}`}
+   <label>사범님 한마디 (선택, 리포트에 함께 나가요)</label><textarea data-cm="${s.id}" style="min-height:60px">${esc(s.comment||'')}</textarea>
+   ${s.phone&&s.publishedAt?`<button class="btn ghost full" style="margin-top:8px" data-photo="${esc(s.id)}">📷 사진 촬영·업로드</button>`:'<div class="note">학부모 리포트를 먼저 올리면 사진을 첨부할 수 있어요.</div>'}</div>`}).join('')||'<div class="card empty">측정 기록이 있는 원생이 없어요.<br>측정 입력 탭에서 숫자를 저장하면 여기에 아이별 피드백과 <b>사범님 한마디</b> 칸이 나와요.<br>(한마디는 원생 탭 › 아이 이름에서도 쓸 수 있어요)</div>'}`}
+
+function reportPhoto(value){
+  return typeof value==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(value);
+}
+
+async function compressReportPhoto(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const image=new Image();
+    image.src=url;
+    await image.decode();
+    const canvas=document.createElement('canvas');
+    const context=canvas.getContext('2d');
+    for(const maxSide of [1280,960,640]){
+      const scale=Math.min(1,maxSide/Math.max(image.naturalWidth,image.naturalHeight));
+      canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
+      canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+      context.drawImage(image,0,0,canvas.width,canvas.height);
+      const photo=canvas.toDataURL('image/jpeg',0.75);
+      if(photo.length<=220000&&reportPhoto(photo))return photo;
+    }
+    throw new Error('Photo exceeds report size limit');
+  }finally{URL.revokeObjectURL(url)}
+}
+
+function reportPhotoSheet(id){
+  const student=S.students.find(s=>s.id===id);
+  if(!student?.phone||!student.publishedAt||busy)return;
+  const bg=sheet(`<h3>${esc(student.name)} 수련 사진</h3>
+    <div class="note">보호자 동의를 받은 사진을 올려 주세요. 촬영을 완료하거나 사진을 선택하면 이 아이의 학부모 리포트에 바로 표시돼요. 새 사진은 이전 사진을 교체해요.</div>
+    <div class="row" style="margin-top:12px"><button class="btn grow" data-open-camera>사진 촬영</button><button class="btn ghost grow" data-open-gallery>사진 선택</button></div>
+    <input type="file" class="hide" data-camera accept="image/*" capture="environment">
+    <input type="file" class="hide" data-gallery accept="image/*">
+    <div class="note" role="status" data-photo-status></div>
+    <button class="btn ghost full" style="margin-top:8px" data-close-photo>닫기</button>`);
+  const camera=bg.querySelector('[data-camera]');
+  const gallery=bg.querySelector('[data-gallery]');
+  const cameraButton=bg.querySelector('[data-open-camera]');
+  const galleryButton=bg.querySelector('[data-open-gallery]');
+  const closeButton=bg.querySelector('[data-close-photo]');
+  const status=bg.querySelector('[data-photo-status]');
+  cameraButton.onclick=()=>camera.click();
+  galleryButton.onclick=()=>gallery.click();
+  closeButton.onclick=()=>bg.remove();
+  let uploading=false;
+  bg.addEventListener('click',event=>{if(uploading&&event.target===bg)event.stopImmediatePropagation()},true);
+  camera.onchange=gallery.onchange=async(event)=>{
+    const file=event.target.files[0];
+    if(!file||uploading||!isAdminPage())return;
+    event.target.value='';
+    uploading=true;
+    cameraButton.disabled=galleryButton.disabled=closeButton.disabled=true;
+    status.textContent='사진 올리는 중…';
+    try{
+      const photo=await compressReportPhoto(file);
+      const key=await parentKey(student.name,student.phone);
+      await F.updateDoc(F.doc(db,'reports',key),{photo});
+      bg.remove();
+      toast('학부모 리포트에 사진을 올렸어요');
+    }catch(error){
+      console.error(error);
+      status.textContent='사진을 올리지 못했어요. 다른 사진을 선택하거나 다시 시도해 주세요.';
+    }finally{
+      uploading=false;
+      cameraButton.disabled=galleryButton.disabled=closeButton.disabled=false;
+    }
+  };
+}
 
 // ----- admin actions -----
 function sheet(html){const bg=document.createElement('div');bg.className='sheet-bg';bg.innerHTML=`<div class="sheet">${html}</div>`;bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});document.body.appendChild(bg);return bg}
@@ -728,7 +798,7 @@ async function publish(){
   busy=true;renderAdmin();const now=new Date().toISOString();
   try{for(let i=0;i<l.length;i+=200){const b=F.writeBatch(db);
       for(const s of l.slice(i,i+200)){const rs=recsOf(s.id).map(({id,sid,...r})=>r);
-        b.set(F.doc(db,'reports',await parentKey(s.name,s.phone)),{name:s.name,cls:s.cls||'',grade:s.grade||'',belt:s.belt||'',birth:s.birth||'',records:rs,feedback:feedback(s,recsOf(s.id)),updatedAt:now});
+        b.set(F.doc(db,'reports',await parentKey(s.name,s.phone)),{name:s.name,cls:s.cls||'',grade:s.grade||'',belt:s.belt||'',birth:s.birth||'',records:rs,feedback:feedback(s,recsOf(s.id)),updatedAt:now},{merge:true});
         b.set(F.doc(db,'students',s.id),{...Object.fromEntries(Object.entries(s).filter(([k])=>k!=='id')),publishedAt:now})}
       await b.commit()}
     l.forEach(s=>s.publishedAt=now);toast(`${l.length}명 리포트를 올렸어요`)}catch(e){console.error(e);toast('올리지 못했어요')}
@@ -777,6 +847,7 @@ $('#view').addEventListener('click',e=>{
   if(t.id==='roster')return $('#rosterFile').click();
   if(t.id==='qSave')return saveQuick();
   if(t.id==='eduGo')return $('#eduFile').click();
+  if(t.dataset.photo)return reportPhotoSheet(t.dataset.photo);
   if(t.id==='pub')return publish();
   if(t.id==='copyNotice'){const url=location.href.split('#')[0];const txt=`[${DOJO.name}] 이번 달 우리 아이 성장 리포트가 나왔어요!\n\n아래 주소에서 아이 이름과 보호자 휴대폰 번호로 들어오시면 키·몸무게 변화, 체력 결과, 추천 운동을 보실 수 있어요.\n처음 오시면 "처음 왔어요"를 눌러 비밀번호를 만들어 주세요.\n\n👉 ${url}\n\n문의: ${DOJO.tel}`;
     navigator.clipboard.writeText(txt).then(()=>toast('복사했어요. 에듀패밀리 공지에 붙여넣으세요')).catch(()=>{sheet(`<h3>공지 문구</h3><textarea style="min-height:220px">${esc(txt)}</textarea>`)});return}
