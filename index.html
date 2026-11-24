@@ -125,7 +125,13 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');cl
 const FIT=[{k:'run',l:'10m 달리기',s:'10m',u:'초',low:true,lim:[1,20],d:2},{k:'jump',l:'제자리멀리뛰기',s:'멀리뛰기',u:'cm',lim:[10,350],d:0},{k:'situp',l:'윗몸일으키기',s:'윗몸',u:'회',lim:[1,150],d:0},{k:'moa',l:'모아뛰기',s:'모아',u:'회',lim:[1,500],d:0},{k:'alt',l:'번갈아뛰기',s:'번갈아',u:'회',lim:[1,500],d:0}];
 const FK=FIT.map(f=>f.k),FI=Object.fromEntries(FIT.map(f=>[f.k,f]));
 const LOGO='data:image/png;base64,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';
-const BELTS=['','노랑띠','초록띠','파랑띠','빨강띠','품띠','검정띠'];
+// 이루다 띠 순서 (2026-12 관장님 확인): 8급 → 1급 → 국기원 심사(품·단)
+const BELT_ORDER=['노랑띠(8급)','보라띠(7급)','파랑띠(6급)','주황띠(5급)','초록띠(4급)','밤띠(3급)','줄빨간띠(2급)','빨간띠(1급)','품띠','검정띠'];
+const BELT_SHORT={'노랑띠(8급)':'노랑','보라띠(7급)':'보라','파랑띠(6급)':'파랑','주황띠(5급)':'주황','초록띠(4급)':'초록','밤띠(3급)':'밤','줄빨간띠(2급)':'줄빨강','빨간띠(1급)':'빨강','품띠':'품','검정띠':'검정'};
+const BELT_COLOR={'노랑띠(8급)':'#F2C94C','보라띠(7급)':'#8E5BC8','파랑띠(6급)':'#2F6FD0','주황띠(5급)':'#F08A24','초록띠(4급)':'#3E9B4F','밤띠(3급)':'#7A4A2A','줄빨간띠(2급)':'repeating-linear-gradient(90deg,#C62828 0 6px,#fff 6px 9px)','빨간띠(1급)':'#C62828','품띠':'linear-gradient(90deg,#C62828 50%,#222 50%)','검정띠':'#222'};
+const BELTS=['',...BELT_ORDER];
+const beltIdx=b=>BELT_ORDER.indexOf(b);
+const ym=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
 const DEFAULT_CLS=[];
 const has=(r,k)=>r&&r[k]!==undefined&&r[k]!==null&&r[k]!=='';
 const hv=(r,k)=>has(r,k)&&+r[k]>0; // 에듀는 측정 안 한 칸을 0으로 둠
@@ -306,14 +312,14 @@ async function adminStart(){
 async function loadAll(){
   const [s,r]=await Promise.all([F.getDocs(F.collection(db,'students')),F.getDocs(F.collection(db,'records'))]);
   S.students=s.docs.map(d=>({id:d.id,...d.data()}));S.records=r.docs.map(d=>({id:d.id,...d.data()}))}
-const TABS=[['students','👥','원생'],['quick','⚡','측정 입력'],['report','📊','리포트'],['help','❓','사용법']];
+const TABS=[['students','👥','원생'],['belt','🥋','띠 관리'],['quick','⚡','측정 입력'],['report','📊','리포트'],['help','❓','사용법']];
 function renderAdmin(){
   $('#nav').classList.remove('hide');
   $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-tab="${k}"><span class="ic">${i}</span>${l}</button>`).join('');
   $('#nav').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(S.tab==='quick')qDraft();S.sel=null;S.tab=b.dataset.tab;window.scrollTo(0,0);renderAdmin()});
   const active=document.activeElement&&document.activeElement.id,caret=active&&document.activeElement.selectionStart;
   document.body.classList.toggle('wide',S.tab==='quick');
-  $('#view').innerHTML={students:vStudents,quick:vQuick,report:vReport,help:vHelp}[S.tab]();
+  $('#view').innerHTML={students:vStudents,belt:vBelt,quick:vQuick,report:vReport,help:vHelp}[S.tab]();
   if(active==='search'){const s=$('#search');if(s){s.focus();try{s.setSelectionRange(caret,caret)}catch(e){}}}
 }
 function classes(){const s=new Set(DEFAULT_CLS);S.students.forEach(x=>x.cls&&s.add(x.cls));return[...s].sort((a,b)=>(parseInt(a)||99)-(parseInt(b)||99)||a.localeCompare(b,'ko'))}
@@ -322,6 +328,86 @@ const byCls=l=>S.cls==='전체'?l:l.filter(s=>s.cls===S.cls);
 const chips=()=>`<div class="chips">${['전체',...classes()].map(c=>`<button class="chip ${S.cls===c?'on':''}" data-cls="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
 const recsOf=sid=>S.records.filter(r=>r.sid===sid).sort((a,b)=>a.date.localeCompare(b.date));
 
+// =====================================================================
+// 띠 관리 (승급·시상·현황 문구·띠 주문)
+// =====================================================================
+function beltMonth(){return S.bm||(S.bm=ym(new Date()))}
+// 승급 규칙(관장님): 홀수 달 = 전체 승급 + 시상, 짝수 달 = 초등부만 승급(시상 없음)
+const isElem=x=>/^초/.test(String(x.grade||'').trim());
+const canPromote=(x,m)=>{const i=beltIdx(x.belt);return i>=0&&i<7&&((+m.slice(5))%2===1||isElem(x))};
+function dispNames(list){ // 같은 이름이 있으면 (여)/(남) 붙이기
+  const cnt={};S.students.forEach(x=>{const n=normName(x.name);cnt[n]=(cnt[n]||0)+1});
+  return list.map(x=>esc(x.name)+(cnt[normName(x.name)]>1&&x.gender?`(${x.gender})`:''))}
+function promotedIn(m){const out=[];S.students.forEach(x=>(x.beltLog||[]).forEach(l=>{if(l.m===m)out.push({s:x,l})}));return out}
+function vBelt(){
+  const m=beltMonth(),mon=+m.slice(5),odd=mon%2===1,sel=S.bsel||(S.bsel=new Set());
+  const withBelt=S.students.filter(x=>beltIdx(x.belt)>=0),noBelt=S.students.filter(x=>beltIdx(x.belt)<0);
+  const promos=promotedIn(m),aw=S.students.filter(x=>x.awards&&x.awards[m]);
+  const chip=x=>{const pr=(x.beltLog||[]).some(l=>l.m===m),a=x.awards&&x.awards[m];
+    return`<button class="chip ${sel.has(x.id)?'on':''}" data-bpick="${x.id}" style="margin:3px">${esc(x.name)}${pr?' ⬆':''}${a==='우수상'?' 🏆':a==='모범상'?' 🥇':''}</button>`};
+  return`<div class="card"><div class="row"><label style="margin:0">기준 달</label><input type="month" id="bMonth" value="${m}" style="width:auto"><span class="meta grow">${odd?'홀수 달: 전체 승급 + 시상':'짝수 달: <b>초등부만</b> 승급 · 시상 없음'}</span></div>
+   <div class="note">이름을 눌러 고른 뒤 아래 버튼으로 <b>승급</b>·<b>시상</b>을 처리하세요. ⬆ 이번 달 승급 · 🏆 우수상 · 🥇 모범상</div>
+   <button class="btn ghost full" id="bTarget" style="margin-top:8px">이번 달 승급 대상 모두 고르기 (${odd?'전체':'초등부'} ${S.students.filter(x=>canPromote(x,m)&&!(x.beltLog||[]).some(l=>l.m===m)).length}명)</button>
+   <div class="note">심사에서 떨어진 원생은 고른 뒤 이름을 한 번 더 눌러 빼면 돼요.</div></div>
+  ${BELT_ORDER.map(b=>{const l=withBelt.filter(x=>x.belt===b).sort((a,c)=>(a.name||'').localeCompare(c.name||'','ko'));if(!l.length&&beltIdx(b)>7)return'';
+    return`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:6px"><span style="width:34px;height:12px;border-radius:3px;background:${BELT_COLOR[b]};border:1px solid #0002;flex:none"></span><b class="grow">${b}</b><span class="meta">${l.length}명</span><button class="btn ghost sm" data-ball="${b}">모두 고르기</button></div>${l.map(chip).join('')||'<span class="meta">없음</span>'}</div>`}).join('')}
+  ${noBelt.length?`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:6px"><b class="grow">띠 미입력</b><span class="meta">${noBelt.length}명</span></div>${noBelt.map(chip).join('')}</div>`:''}
+  <div class="card" style="position:sticky;bottom:70px;z-index:4;border:2px solid var(--pri)">
+   <div class="row" style="margin-bottom:8px"><b class="grow">${sel.size}명 선택</b><button class="btn ghost sm" id="bClear">선택 해제</button></div>
+   <div class="grid2" style="gap:8px"><button class="btn" id="bUp" ${sel.size?'':'disabled'}>⬆ 한 단계 승급</button><button class="btn ghost" id="bUndo" ${sel.size?'':'disabled'}>↩ 이번 달 승급 취소</button>
+   <button class="btn ghost" id="bA1" ${sel.size?'':'disabled'}>🏆 우수상</button><button class="btn ghost" id="bA2" ${sel.size?'':'disabled'}>🥇 모범상</button></div>
+   <button class="btn ghost full" id="bA0" style="margin-top:8px" ${sel.size?'':'disabled'}>시상 지우기</button></div>
+  <div class="card"><div class="row"><b class="grow">이번 달 정리</b><span class="meta">승급 ${promos.length}명 · 시상 ${aw.length}명</span></div>
+   <button class="btn full" id="bText" style="margin-top:8px">📋 띠 현황 문구 만들기 (띠 주문 포함)</button>
+   <button class="btn ghost full" id="bImport" style="margin-top:8px">📥 지금 띠 현황 붙여넣기 (처음 한 번)</button>
+   <div class="note">승급하면 원생마다 "언제 어떤 띠로" 기록이 남아요. 띠 주문 수량은 이번 달 새로 바뀐 띠만 셉니다.</div></div>`}
+function beltText(m){
+  const [y,mo]=[+m.slice(0,4),+m.slice(5)],withBelt=S.students.filter(x=>beltIdx(x.belt)>=0);
+  const promos=promotedIn(m),odd=mo%2===1;
+  let t=`🥋 경희대 이루다 태권도장\n${mo}월 띠 현황\n\n■ ${y}년 ${mo}월 (총 ${withBelt.length}명)\n`;
+  if(!odd){const pn=promos.map(p=>p.s);t+=`※ 짝수 달이라 시상 없음${pn.length?` / 초등부 승급자 ${pn.length}명(${dispNames(pn).join(', ')})만 변동`:' / 초등부 승급자 없음'}\n`}
+  t+='\n';
+  BELT_ORDER.forEach(b=>{const l=withBelt.filter(x=>x.belt===b);if(!l.length)return;
+    t+=`${b} : ${dispNames(l).join(', ')} — ${l.length}명\n\n`});
+  const a1=S.students.filter(x=>x.awards&&x.awards[m]==='우수상'),a2=S.students.filter(x=>x.awards&&x.awards[m]==='모범상');
+  if(a1.length)t+=`🏆 우수상(트로피) : ${dispNames(a1).join(', ')} — ${a1.length}명\n`;
+  if(a2.length)t+=`🥇 모범상(메달) : ${dispNames(a2).join(', ')} — ${a2.length}명\n`;
+  const order={};promos.forEach(p=>{order[p.l.to]=(order[p.l.to]||0)+1});
+  const ol=BELT_ORDER.filter(b=>order[b]).map(b=>`${BELT_SHORT[b]} ${order[b]}`);
+  t+=`\n■ 띠 주문\n${mo}월 (${promos.length}개) : ${ol.join(', ')||'없음'}\n`;
+  const red=withBelt.filter(x=>x.belt==='빨간띠(1급)').length;
+  if(red)t+=`\n※ 1급(빨간띠) ${red}명은 국기원 심사 결과가 나오면 따로 안내드립니다.\n`;
+  return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+}
+async function beltSave(list){ // list: [{id, data}]
+  busy=true;try{for(let i=0;i<list.length;i+=400){const b=F.writeBatch(db);list.slice(i,i+400).forEach(({id,data})=>b.set(F.doc(db,'students',id),data));await b.commit()}
+    list.forEach(({id,data})=>{const i=S.students.findIndex(x=>x.id===id);if(i>=0)S.students[i]={id,...data}});return true}catch(e){console.error(e);toast('저장하지 못했어요');return false}finally{busy=false}}
+const plain=x=>{const o={...x};delete o.id;return o};
+async function beltAction(kind){
+  const m=beltMonth(),ids=[...S.bsel],list=[];let skip=0;
+  for(const id of ids){const x=S.students.find(s=>s.id===id);if(!x)continue;const o=plain(x);
+    if(kind==='up'){if(!canPromote(x,m)){skip++;continue}const i=beltIdx(x.belt),to=BELT_ORDER[i+1];
+      o.beltLog=[...(x.beltLog||[]).filter(l=>l.m!==m),{m,from:x.belt,to}];o.belt=to}
+    else if(kind==='undo'){const l=(x.beltLog||[]).find(l=>l.m===m);if(!l){skip++;continue}o.belt=l.from;o.beltLog=(x.beltLog||[]).filter(k=>k.m!==m)}
+    else{o.awards={...(x.awards||{})};if(kind)o.awards[m]=kind;else delete o.awards[m]}
+    list.push({id,data:o})}
+  if(!list.length){toast(kind==='up'?((+m.slice(5))%2?'승급할 수 있는 원생이 없어요 (띠 미입력·1급은 제외)':'짝수 달은 초등부만 승급해요. 고른 원생 중 초등부가 없어요'):kind==='undo'?'이번 달 승급 기록이 없어요':'선택한 원생이 없어요');return}
+  if(await beltSave(list)){S.bsel=new Set();toast({up:`${list.length}명 승급했어요${skip?((+m.slice(5))%2?` (${skip}명 제외: 띠 미입력·1급)`:` (${skip}명 제외: 짝수 달은 초등부만)`):''}`,undo:`${list.length}명 승급을 취소했어요`}[kind]||`${list.length}명 ${kind||'시상 지움'} 처리했어요`+(skip?` (${skip}명 제외)`:''));renderAdmin()}}
+function beltImportSheet(){
+  const bg=sheet(`<h3>띠 현황 붙여넣기</h3><div class="note" style="margin-top:0">매달 쓰시던 현황 글을 그대로 붙여넣으세요. <b>"파랑띠(6급) : 이름, 이름 — 9명"</b> 같은 줄을 읽어서 원생 띠에 넣어요. 같은 이름은 (여)/(남)으로 구분해요. 승급 기록은 남기지 않아요.</div>
+   <textarea id="bi" style="min-height:200px"></textarea><div id="biPrev" class="note"></div>
+   <div class="row" style="margin-top:12px"><button class="btn ghost grow" id="biX">취소</button><button class="btn grow" id="biOk">적용하기</button></div>`);
+  const parse=()=>{const res=[],miss=[];
+    bg.querySelector('#bi').value.split(/\r?\n/).forEach(line=>{const mt=line.match(/^\s*([가-힣]+띠(?:\(\d급\))?)\s*[:：]\s*(.+?)\s*(?:[—–-]\s*\d+\s*명)?\s*$/);if(!mt)return;
+      const b=BELT_ORDER.find(x=>x===mt[1]||x.startsWith(mt[1].replace(/\(.*$/,'')+'('))||BELT_ORDER.find(x=>x.replace(/\(.*$/,'')===mt[1].replace(/\(.*$/,''));if(!b)return;
+      mt[2].split(/[,，]/).map(n=>n.trim()).filter(Boolean).forEach(n=>{const g=(n.match(/\((여|남)\)/)||[])[1],nm=normName(n.replace(/\(.*?\)/g,''));
+        let c=S.students.filter(x=>normName(x.name)===nm);if(g&&c.length>1)c=c.filter(x=>x.gender===g);
+        if(c.length===1)res.push({x:c[0],b});else miss.push(n+(c.length>1?'(같은 이름 여러 명)':''))})});
+    return{res,miss}};
+  bg.querySelector('#bi').oninput=()=>{const{res,miss}=parse();bg.querySelector('#biPrev').innerHTML=`${res.length}명 찾음${miss.length?` · <b style="color:var(--bad)">못 찾음 ${miss.length}명</b>: ${miss.slice(0,15).map(esc).join(', ')}${miss.length>15?' 외':''}`:''}`};
+  bg.querySelector('#biX').onclick=()=>bg.remove();
+  bg.querySelector('#biOk').onclick=async()=>{const{res}=parse();if(!res.length){toast('읽은 원생이 없어요');return}
+    if(await beltSave(res.map(({x,b})=>({id:x.id,data:{...plain(x),belt:b}})))){bg.remove();toast(`${res.length}명 띠를 넣었어요`);renderAdmin()}}}
 function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
  <a class="btn ghost full" href="guide.html" target="_blank" rel="noopener" style="display:block;text-decoration:none;margin-bottom:6px">📘 사범님 설명서 열기 (폰 입력 방법)</a>
  <details open><summary><span><span class="step">매달</span>측정부터 리포트까지</span></summary><ol>
@@ -337,6 +423,13 @@ function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
   <li><b>에듀는 측정 날짜마다 표가 따로 있어요.</b> 빈문서는 반드시 <b>올릴 그 날짜 화면</b>에서 받으세요. 엑셀을 만들면 "○월 ○일 측정 데이터 화면에 올려야 해요"라고 크게 나와요 — 에듀 화면 맨 위 날짜와 같은지 확인!</li>
   <li>에듀에서 <b>파일 선택</b> 후 꼭 <b>엑셀파일 업로드</b> 버튼까지 눌러야 들어가요. 고르는 파일은 <b>"에듀업로드_"로 시작하는 파일</b>(빈문서 아님).</li>
   <li>한 달에 부별로 여러 날 나눠 쟀어도 괜찮아요 — 아이마다 그 달의 가장 최근 기록이 들어가요.</li></ul></details>
+ <details><summary><span><span class="step">매월 초</span>띠 관리 (승급 · 시상 · 띠 주문)</span></summary><ol>
+  <li><b>처음 한 번</b> — 띠 관리 탭 › <b>지금 띠 현황 붙여넣기</b> › 매달 쓰던 현황 글을 그대로 붙여넣기 › 적용하기. 못 찾은 이름은 원생 탭에서 띠를 직접 고르세요.</li>
+  <li><b>기준 달</b>을 고릅니다. <b>홀수 달 = 전체 승급 + 시상</b>, <b>짝수 달 = 초등부만 승급(시상 없음)</b>.</li>
+  <li><b>이번 달 승급 대상 모두 고르기</b> → 심사에서 빠질 원생은 이름을 눌러 빼기 → <b>⬆ 한 단계 승급</b>. 잘못 누르면 <b>↩ 이번 달 승급 취소</b>.</li>
+  <li>홀수 달은 수상자를 골라 <b>🏆 우수상</b> / <b>🥇 모범상</b>.</li>
+  <li><b>📋 띠 현황 문구 만들기</b> → 복사 → 사범님 단톡·에듀에 붙여넣기. 띠 주문 수량도 같이 나와요.</li>
+  <li>1급(빨간띠) 다음은 국기원 심사라 자동 승급하지 않아요. 품·단을 받으면 원생 탭에서 띠를 바꿔 주세요.</li></ol></details>
  <details><summary><span><span class="step">처음 1번</span>원생 명단 넣기</span></summary><ol>
   <li>에듀 PC › 원생 엑셀출력에서 <b>학생번호 · 원생이름 · 생일 · 성별 · 학년 · 부 · 부모1 전화번호</b>만 체크 → 엑셀 출력.</li>
   <li>원생 탭 › <b>에듀 원생 명단 엑셀 올리기</b> → 파일 선택 → 내용 확인 → 적용하기.</li>
@@ -545,6 +638,18 @@ $('#view').addEventListener('click',e=>{
   if(!isAdminPage())return;
   const t=e.target.closest('button,[data-edit],[data-pick]');if(!t)return;
   if(t.dataset.pick){S.sel.has(t.dataset.pick)?S.sel.delete(t.dataset.pick):S.sel.add(t.dataset.pick);return renderAdmin()}
+  if(t.dataset.bpick){const b=S.bsel||(S.bsel=new Set());b.has(t.dataset.bpick)?b.delete(t.dataset.bpick):b.add(t.dataset.bpick);return renderAdmin()}
+  if(t.dataset.ball){const b=S.bsel||(S.bsel=new Set());S.students.filter(x=>x.belt===t.dataset.ball).forEach(x=>b.add(x.id));return renderAdmin()}
+  if(t.id==='bClear'){S.bsel=new Set();return renderAdmin()}
+  if(t.id==='bTarget'){const m=beltMonth();S.bsel=new Set(S.students.filter(x=>canPromote(x,m)&&!(x.beltLog||[]).some(l=>l.m===m)).map(x=>x.id));return renderAdmin()}
+  if(t.id==='bUp')return beltAction('up');
+  if(t.id==='bUndo')return beltAction('undo');
+  if(t.id==='bA1')return beltAction('우수상');
+  if(t.id==='bA2')return beltAction('모범상');
+  if(t.id==='bA0')return beltAction('');
+  if(t.id==='bImport')return beltImportSheet();
+  if(t.id==='bText'){const txt=beltText(beltMonth());const bg=sheet(`<h3>${+beltMonth().slice(5)}월 띠 현황 문구</h3><textarea id="btx" style="min-height:320px">${esc(txt)}</textarea><div class="row" style="margin-top:12px"><button class="btn ghost grow" id="btX">닫기</button><button class="btn grow" id="btC">복사하기</button></div>`);
+    bg.querySelector('#btX').onclick=()=>bg.remove();bg.querySelector('#btC').onclick=()=>navigator.clipboard.writeText(bg.querySelector('#btx').value).then(()=>toast('복사했어요. 단톡·에듀에 붙여넣으세요')).catch(()=>{bg.querySelector('#btx').select();toast('글을 길게 눌러 복사해 주세요')});return}
   if(t.id==='selOn'){S.sel=new Set();window.scrollTo(0,0);return renderAdmin()}
   if(t.id==='selX'){S.sel=null;return renderAdmin()}
   if(t.id==='selAll'){const l=byCls(sorted()).filter(x=>{const q=S.search.trim();return!q||(x.name||'').includes(q)||digits(x.phone).includes(digits(q)||'@')});const all=l.length&&l.every(x=>S.sel.has(x.id));l.forEach(x=>all?S.sel.delete(x.id):S.sel.add(x.id));return renderAdmin()}
@@ -571,6 +676,7 @@ $('#view').addEventListener('change',e=>{
   if(!isAdminPage())return;
   if(e.target.id==='rosterFile'&&e.target.files[0]){const f=e.target.files[0];e.target.value='';return importRoster(f)}
   if(e.target.id==='eduFile'&&e.target.files[0]){const f=e.target.files[0];e.target.value='';return exportEdu(f,$('#eduMonth').value||TODAY.slice(0,7))}
+  if(e.target.id==='bMonth'){S.bm=e.target.value||ym(new Date());S.bsel=new Set();return renderAdmin()}
   if(e.target.id==='qDate'){qDraft();S.qd={};S.qdate=e.target.value||TODAY;renderAdmin()}
   if(e.target.id==='qFit'){qDraft();S.qfit=e.target.checked;renderAdmin()}
 });
