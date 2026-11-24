@@ -334,8 +334,14 @@ const recsOf=sid=>S.records.filter(r=>r.sid===sid).sort((a,b)=>a.date.localeComp
 function beltMonth(){return S.bm||(S.bm=ym(new Date()))}
 // 승급 규칙(관장님): 홀수 달 = 전체 승급 + 시상, 짝수 달 = 초등부만 승급(시상 없음)
 const isElem=x=>/^초/.test(String(x.grade||'').trim());
-const isKuk=x=>x.belt==='빨간띠(1급)'||!!x.kukkiwon; // 국기원 심사 대상: 빨간띠는 자동, 그 밖은 직접 추가
-const canPromote=(x,m)=>{const i=beltIdx(x.belt);return i>=0&&i<7&&((+m.slice(5))%2===1||isElem(x))};
+// 유품자 급수(관장님): 1품 12급→1급 · 2품 24급→1급 · 3품 36급→1급 · 4품 48급→1급 → 1급이면 국기원 심사 대상
+const isPoom=x=>x.belt==='품띠'&&+x.poom>=1;
+const poomMax=p=>12*(+p||0);
+const poomLabel=x=>isPoom(x)?`${x.poom}품${x.pg?' '+x.pg+'급':''}`:'';
+const isKuk=x=>x.belt==='빨간띠(1급)'||(isPoom(x)&&+x.pg===1)||!!x.kukkiwon; // 국기원 심사 대상: 빨간띠·유품자 1급은 자동, 그 밖은 직접 추가
+const monthOk=(x,m)=>(+m.slice(5))%2===1||isElem(x);
+const canPromote=(x,m)=>{if(isPoom(x))return +x.pg>1&&monthOk(x,m);const i=beltIdx(x.belt);return i>=0&&i<7&&monthOk(x,m)};
+const beltChanges=m=>promotedIn(m).filter(p=>!p.l.poom); // 띠 주문에 들어가는 것(유품자 급수 변동 제외)
 function dispNames(list){ // 같은 이름이 있으면 (여)/(남) 붙이기
   const cnt={};S.students.forEach(x=>{const n=normName(x.name);cnt[n]=(cnt[n]||0)+1});
   return list.map(x=>esc(x.name)+(cnt[normName(x.name)]>1&&x.gender?`(${x.gender})`:''))}
@@ -345,15 +351,15 @@ function vBelt(){
   const withBelt=S.students.filter(x=>beltIdx(x.belt)>=0),noBelt=S.students.filter(x=>beltIdx(x.belt)<0);
   const promos=promotedIn(m),aw=S.students.filter(x=>x.awards&&x.awards[m]);
   const chip=x=>{const lg=(x.beltLog||[]).find(l=>l.m===m),pr=lg&&!lg.manual,mn=lg&&lg.manual,a=x.awards&&x.awards[m];
-    return`<button class="chip ${sel.has(x.id)?'on':''}" data-bpick="${x.id}" style="margin:3px">${esc(x.name)}${pr?' ⬆':''}${mn?' ✎':''}${a==='우수상'?' 🏆':a==='모범상'?' 🥇':''}</button>`};
+    return`<button class="chip ${sel.has(x.id)?'on':''}" data-bpick="${x.id}" style="margin:3px">${esc(x.name)}${isPoom(x)?` <span class="meta">${poomLabel(x)}</span>`:''}${pr?' ⬆':''}${mn?' ✎':''}${a==='우수상'?' 🏆':a==='모범상'?' 🥇':''}</button>`};
   return`<div class="card"><div class="row"><label style="margin:0">기준 달</label><input type="month" id="bMonth" value="${m}" style="width:auto"><span class="meta grow">${odd?'홀수 달: 전체 승급 + 시상':'짝수 달: <b>초등부만</b> 승급 · 시상 없음'}</span></div>
    <div class="note">이름을 눌러 고른 뒤 아래 버튼으로 <b>승급</b>·<b>시상</b>을 처리하세요. ⬆ 이번 달 승급 · ✎ 원생 창에서 띠를 직접 바꿈(신입 첫 띠 등) · 🏆 우수상 · 🥇 모범상</div>
    <button class="btn ghost full" id="bTarget" style="margin-top:8px">이번 달 승급 대상 모두 고르기 (${odd?'전체':'초등부'} ${S.students.filter(x=>canPromote(x,m)&&!(x.beltLog||[]).some(l=>l.m===m)).length}명)</button>
    <div class="note">심사에서 떨어진 원생은 고른 뒤 이름을 한 번 더 눌러 빼면 돼요.</div></div>
-  ${BELT_ORDER.map(b=>{const l=withBelt.filter(x=>x.belt===b).sort((a,c)=>(a.name||'').localeCompare(c.name||'','ko'));if(!l.length&&beltIdx(b)>7)return'';
+  ${BELT_ORDER.map(b=>{const l=withBelt.filter(x=>x.belt===b).sort((a,c)=>b==='품띠'?((+a.poom||9)-(+c.poom||9)||(+c.pg||0)-(+a.pg||0)||(a.name||'').localeCompare(c.name||'','ko')):(a.name||'').localeCompare(c.name||'','ko'));if(!l.length&&beltIdx(b)>7)return'';
     if(b==='빨간띠(1급)'){const k=S.students.filter(isKuk).sort((a,c)=>(a.name||'').localeCompare(c.name||'','ko'));
-      return`<div class="card" style="padding:12px;border:2px dashed #C62828;background:var(--pri-soft)"><div class="row" style="margin-bottom:6px"><span style="width:34px;height:12px;border-radius:3px;background:${BELT_COLOR[b]};flex:none"></span><b class="grow">🎖 국기원 심사 대상</b><span class="meta">${k.length}명</span></div>${k.map(x=>chip(x).replace('</button>',x.belt==='빨간띠(1급)'?'</button>':` <span class="meta">(${esc(BELT_SHORT[x.belt]||'띠 없음')})</span></button>`)).join('')||'<span class="meta">없음</span>'}<div class="note">빨간띠(1급)는 자동으로 들어오고, 그 밖의 원생은 이름을 골라 <b>🎖 국기원 대상 추가</b>로 넣어요. 품·단을 받으면 원생 탭에서 띠를 바꾸고 <b>국기원 대상 빼기</b>를 눌러 주세요.</div></div>`}
-    return`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:6px"><span style="width:34px;height:12px;border-radius:3px;background:${BELT_COLOR[b]};border:1px solid #0002;flex:none"></span><b class="grow">${b}</b><span class="meta">${l.length}명</span><button class="btn ghost sm" data-ball="${b}">모두 고르기</button></div>${l.map(chip).join('')||'<span class="meta">없음</span>'}</div>`}).join('')}
+      return`<div class="card" style="padding:12px;border:2px dashed #C62828;background:var(--pri-soft)"><div class="row" style="margin-bottom:6px"><span style="width:34px;height:12px;border-radius:3px;background:${BELT_COLOR[b]};flex:none"></span><b class="grow">🎖 국기원 심사 대상</b><span class="meta">${k.length}명</span></div>${k.map(x=>(isPoom(x)?chip(x):chip(x).replace('</button>',x.belt==='빨간띠(1급)'?'</button>':` <span class="meta">(${esc(BELT_SHORT[x.belt]||'띠 없음')})</span></button>`))).join('')||'<span class="meta">없음</span>'}<div class="note">빨간띠(1급)는 자동으로 들어오고, 그 밖의 원생은 이름을 골라 <b>🎖 국기원 대상 추가</b>로 넣어요. 품·단을 받으면 원생 탭에서 띠를 바꾸고 <b>국기원 대상 빼기</b>를 눌러 주세요.</div></div>`}
+    return`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:6px"><span style="width:34px;height:12px;border-radius:3px;background:${BELT_COLOR[b]};border:1px solid #0002;flex:none"></span><b class="grow">${b}</b><span class="meta">${l.length}명</span><button class="btn ghost sm" data-ball="${b}">모두 고르기</button></div>${l.map(chip).join('')||'<span class="meta">없음</span>'}${b==='품띠'?`<div class="note">유품자는 품 안에서 급수가 올라가요: 1품 12급→1급 · 2품 24급→1급 · 3품 36급→1급 · 4품 48급→1급. <b>한 단계 승급</b>을 누르면 급이 하나 올라가고(띠 주문에는 안 들어감), 1급이 되면 국기원 심사 대상으로 가요. 품·급은 원생 창에서 넣어요.${l.some(x=>!isPoom(x))?` <b style="color:var(--bad)">품이 안 정해진 원생 ${l.filter(x=>!isPoom(x)).length}명</b>`:''}</div>`:''}</div>`}).join('')}
   ${noBelt.length?`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:6px"><b class="grow">띠 미입력</b><span class="meta">${noBelt.length}명</span></div>${noBelt.map(chip).join('')}</div>`:''}
   ${sel.size?`<div class="card" style="position:sticky;bottom:70px;z-index:4;border:2px solid var(--pri);box-shadow:0 -4px 16px #0002">
    <div class="row" style="margin-bottom:8px"><b class="grow">${sel.size}명 선택</b><button class="btn ghost sm" id="bClear">선택 해제</button></div>
@@ -361,6 +367,7 @@ function vBelt(){
    <button class="btn ghost" id="bA1" ${sel.size?'':'disabled'}>🏆 우수상</button><button class="btn ghost" id="bA2" ${sel.size?'':'disabled'}>🥇 모범상</button></div>
    <button class="btn ghost full" id="bA0" style="margin-top:8px" ${sel.size?'':'disabled'}>시상 지우기</button>
    <div class="grid2" style="gap:8px;margin-top:8px"><button class="btn ghost" id="bK1" ${sel.size?'':'disabled'}>🎖 국기원 대상 추가</button><button class="btn ghost" id="bK0" ${sel.size?'':'disabled'}>국기원 대상 빼기</button></div>
+   <button class="btn ghost full" id="bPass" style="margin-top:8px">🎉 국기원 합격 (빨간띠→1품 12급 · 1품→2품 24급 …)</button>
    <button class="btn ghost full" id="bRestoreManual" style="margin-top:8px">✎ 직접 입력 표시 다시 붙이기 (지운 것 되살리기)</button></div>`:`<div class="note" style="text-align:center;margin:4px 0 12px">이름을 누르면 승급·시상 버튼이 화면 아래에 나타나요.</div>`}
   <div class="card"><div class="row"><b class="grow">이번 달 정리</b><span class="meta">승급 ${promos.length}명 · 시상 ${aw.length}명</span></div>
    <button class="btn full" id="bText" style="margin-top:8px">📋 띠 현황 문구 만들기 (띠 주문 포함)</button>
@@ -369,19 +376,23 @@ function vBelt(){
    ${S.students.some(x=>(x.beltLogTrash||[]).some(l=>l.m===m))?`<button class="btn full" id="bRestoreManual" style="margin-top:8px">↩ 지운 ✎ 기록 되살리기 (${S.students.filter(x=>(x.beltLogTrash||[]).some(l=>l.m===m)).length}명)</button>`:''}
    <div class="note">승급하면 원생마다 "언제 어떤 띠로" 기록이 남아요. 띠 주문 수량은 이번 달 새로 바뀐 띠만 셉니다.</div></div>`}
 function beltCheck(m){ // 띠 명단 자동 검산: [ok, 문장]
-  const out=[],mo=+m.slice(5),odd=mo%2===1,withBelt=S.students.filter(x=>beltIdx(x.belt)>=0),promos=promotedIn(m);
+  const out=[],mo=+m.slice(5),odd=mo%2===1,withBelt=S.students.filter(x=>beltIdx(x.belt)>=0),allP=promotedIn(m),promos=beltChanges(m),pUps=allP.filter(p=>p.l.poom&&!p.l.pass);
   const sum=BELT_ORDER.reduce((a,b)=>a+withBelt.filter(x=>x.belt===b).length,0);
   out.push([sum===withBelt.length,`띠별 인원 합계 ${sum}명 = 전체 ${withBelt.length}명`]);
   // 지난달 상태(이번 달 기록을 되돌린 상태)와 비교
   const prevCnt={},nowCnt={};withBelt.forEach(x=>{nowCnt[x.belt]=(nowCnt[x.belt]||0)+1;const l=(x.beltLog||[]).find(k=>k.m===m);const pb=l?l.from:x.belt;if(pb)prevCnt[pb]=(prevCnt[pb]||0)+1});
-  const flow=BELT_ORDER.every(b=>{const inn=promos.filter(p=>p.l.to===b).length,outt=promos.filter(p=>p.l.from===b).length;return (prevCnt[b]||0)+inn-outt===(nowCnt[b]||0)});
+  const flow=BELT_ORDER.every(b=>{const inn=allP.filter(p=>p.l.to===b).length,outt=allP.filter(p=>p.l.from===b).length;return (prevCnt[b]||0)+inn-outt===(nowCnt[b]||0)});
   out.push([flow,'띠마다 "지난달 인원 + 새로 들어옴 − 올라감 = 이번 달 인원"이 맞음']);
   const bad=promos.filter(p=>p.l.from&&!p.l.manual&&beltIdx(p.l.to)!==beltIdx(p.l.from)+1);
+  const pBad=pUps.filter(p=>p.l.pt!==p.l.pf-1);bad.push(...pBad);
   out.push([!bad.length,bad.length?`한 단계가 아닌 승급 ${bad.length}명: ${bad.map(p=>p.s.name).join(', ')}`:'모든 승급이 정확히 한 단계']);
-  if(!odd){const kids=promos.filter(p=>p.l.from&&!p.l.manual&&!isElem(p.s));out.push([!kids.length,kids.length?`짝수 달인데 초등부가 아닌 승급자: ${kids.map(p=>p.s.name).join(', ')}`:'짝수 달 승급자는 모두 초등부'])}
+  if(!odd){const kids=[...promos,...pUps].filter(p=>p.l.from&&!p.l.manual&&!isElem(p.s));out.push([!kids.length,kids.length?`짝수 달인데 초등부가 아닌 승급자: ${kids.map(p=>p.s.name).join(', ')}`:'짝수 달 승급자는 모두 초등부'])}
   const aw=S.students.filter(x=>x.awards&&x.awards[m]);
   if(!odd)out.push([!aw.length,aw.length?`짝수 달인데 시상 입력됨: ${aw.map(x=>x.name).join(', ')}`:'짝수 달 시상 없음']);
   const awNo=aw.filter(x=>beltIdx(x.belt)<0);if(awNo.length)out.push([false,`수상자 중 띠 명단에 없는 원생: ${awNo.map(x=>x.name).join(', ')} (띠 입력 필요)`]);
+  const noP=withBelt.filter(x=>x.belt==='품띠'&&!isPoom(x));if(noP.length)out.push([false,`품띠인데 품·급이 안 정해진 원생: ${noP.map(x=>x.name).join(', ')} (원생 창에서 넣어 주세요)`]);
+  const pOver=withBelt.filter(x=>isPoom(x)&&(!(+x.pg>=1)||+x.pg>poomMax(x.poom)));if(pOver.length)out.push([false,`급수가 범위를 벗어난 유품자: ${pOver.map(x=>x.name+'('+poomLabel(x)+')').join(', ')}`]);
+  if(pUps.length)out.push([true,`유품자 급수 승급 ${pUps.length}명 (띠 주문 없음)`]);
   const kukUp=promos.filter(p=>p.l.from==='빨간띠(1급)');out.push([!kukUp.length,kukUp.length?`빨간띠에서 도장 승급된 원생: ${kukUp.map(p=>p.s.name).join(', ')}`:'국기원 대상(빨간띠)은 도장 승급 없음']);
   const nm={};withBelt.forEach(x=>{const k=normName(x.name);(nm[k]=nm[k]||[]).push(x)});
   const dup=Object.values(nm).filter(l=>l.length>1&&new Set(l.map(x=>x.gender)).size<l.length);
@@ -392,14 +403,17 @@ function beltCheck(m){ // 띠 명단 자동 검산: [ok, 문장]
   return out}
 function beltText(m){
   const [y,mo]=[+m.slice(0,4),+m.slice(5)],withBelt=S.students.filter(x=>beltIdx(x.belt)>=0);
-  const promos=promotedIn(m),odd=mo%2===1;
+  const promos=beltChanges(m),odd=mo%2===1,pUps=promotedIn(m).filter(p=>p.l.poom&&!p.l.pass);
   let t=`🥋 경희대 이루다 태권도장\n${mo}월 띠 현황\n\n■ ${y}년 ${mo}월 (총 ${withBelt.length}명)\n`;
-  if(!odd){const pn=promos.filter(p=>p.l.from&&!p.l.manual).map(p=>p.s);t+=`※ 짝수 달이라 시상 없음${pn.length?` / 초등부 승급자 ${pn.length}명(${dispNames(pn).join(', ')})만 변동`:' / 초등부 승급자 없음'}\n`}
+  if(!odd){const pn=[...promos.filter(p=>p.l.from&&!p.l.manual&&!p.l.pass),...pUps].map(p=>p.s);t+=`※ 짝수 달이라 시상 없음${pn.length?` / 초등부 승급자 ${pn.length}명(${dispNames(pn).join(', ')})만 변동`:' / 초등부 승급자 없음'}\n`}
   t+='\n';
-  BELT_ORDER.forEach(b=>{if(b==='빨간띠(1급)')return;const l=withBelt.filter(x=>x.belt===b);if(!l.length)return;
+  BELT_ORDER.forEach(b=>{if(b==='빨간띠(1급)')return;let l=withBelt.filter(x=>x.belt===b);if(b==='품띠')l=l.filter(x=>!isKuk(x));if(!l.length)return;
+    if(b==='품띠'){[1,2,3,4].forEach(p=>{const q=l.filter(x=>+x.poom===p).sort((a,c)=>(+c.pg||0)-(+a.pg||0));if(!q.length)return;
+      t+=`${p}품 : ${dispNames(q).map((n,i)=>n+(q[i].pg?`(${q[i].pg}급)`:'')).join(', ')} — ${q.length}명\n\n`});
+      const r=l.filter(x=>!isPoom(x));if(r.length)t+=`품띠 : ${dispNames(r).join(', ')} — ${r.length}명\n\n`;return}
     t+=`${b} : ${dispNames(l).join(', ')} — ${l.length}명\n\n`});
   const reds=S.students.filter(isKuk);
-  if(reds.length){const nm=dispNames(reds).map((n,i)=>reds[i].belt==='빨간띠(1급)'?n:`${n}(${BELT_SHORT[reds[i].belt]||'띠 없음'})`);
+  if(reds.length){const nm=dispNames(reds).map((n,i)=>reds[i].belt==='빨간띠(1급)'?n:isPoom(reds[i])?`${n}(${poomLabel(reds[i])})`:`${n}(${BELT_SHORT[reds[i].belt]||'띠 없음'})`);
     t+=`🎖 국기원 심사 대상 : ${nm.join(', ')} — ${reds.length}명\n\n`}
   const a1=S.students.filter(x=>x.awards&&x.awards[m]==='우수상'),a2=S.students.filter(x=>x.awards&&x.awards[m]==='모범상');
   if(a1.length)t+=`🏆 우수상(트로피) : ${dispNames(a1).join(', ')} — ${a1.length}명\n`;
@@ -417,30 +431,38 @@ const plain=x=>{const o={...x};delete o.id;return o};
 async function beltAction(kind){
   const m=beltMonth(),ids=[...S.bsel],list=[];let skip=0;
   for(const id of ids){const x=S.students.find(s=>s.id===id);if(!x)continue;const o=plain(x);
-    if(kind==='up'){if(!canPromote(x,m)){skip++;continue}const i=beltIdx(x.belt),to=BELT_ORDER[i+1];
-      o.beltLog=[...(x.beltLog||[]).filter(l=>l.m!==m),{m,from:x.belt,to}];o.belt=to}
-    else if(kind==='undo'){const l=(x.beltLog||[]).find(l=>l.m===m);if(!l){skip++;continue}o.belt=l.from;o.beltLog=(x.beltLog||[]).filter(k=>k.m!==m)}
+    if(kind==='up'){if(!canPromote(x,m)){skip++;continue}
+      if(isPoom(x)){const pg=+x.pg;o.pg=pg-1;o.beltLog=[...(x.beltLog||[]).filter(l=>l.m!==m),{m,from:'품띠',to:'품띠',poom:true,pp:+x.poom,pf:pg,pt:pg-1}]}
+      else{const i=beltIdx(x.belt),to=BELT_ORDER[i+1];o.beltLog=[...(x.beltLog||[]).filter(l=>l.m!==m),{m,from:x.belt,to}];o.belt=to}}
+    else if(kind==='pass'){let np;if(x.belt==='빨간띠(1급)')np=1;else if(isPoom(x)&&+x.poom<4)np=+x.poom+1;else{skip++;continue}
+      o.belt='품띠';o.poom=np;o.pg=poomMax(np);delete o.kukkiwon;
+      o.beltLog=[...(x.beltLog||[]).filter(l=>l.m!==m),{m,from:x.belt,to:'품띠',poom:true,pass:true,pp:isPoom(x)?+x.poom:0,pf:isPoom(x)?+x.pg:0,pt:poomMax(np),kk:!!x.kukkiwon}]}
+    else if(kind==='undo'){const l=(x.beltLog||[]).find(l=>l.m===m);if(!l){skip++;continue}o.belt=l.from;
+      if(l.poom){if(l.pp){o.poom=l.pp;o.pg=l.pf}else{delete o.poom;delete o.pg}if(l.kk)o.kukkiwon=true}
+      o.beltLog=(x.beltLog||[]).filter(k=>k.m!==m)}
     else if(kind==='kuk1'){if(x.kukkiwon||x.belt==='빨간띠(1급)'){skip++;continue}o.kukkiwon=true}
     else if(kind==='kuk0'){if(!x.kukkiwon){skip++;continue}delete o.kukkiwon}
     else{o.awards={...(x.awards||{})};if(kind)o.awards[m]=kind;else delete o.awards[m]}
     list.push({id,data:o})}
-  if(!list.length){toast(kind==='kuk1'?'이미 국기원 대상이거나 빨간띠예요':kind==='kuk0'?'직접 추가한 국기원 대상이 없어요 (빨간띠는 자동 대상)':kind==='up'?((+m.slice(5))%2?'승급할 수 있는 원생이 없어요 (띠 미입력·1급은 제외)':'짝수 달은 초등부만 승급해요. 고른 원생 중 초등부가 없어요'):kind==='undo'?'이번 달 승급 기록이 없어요':'선택한 원생이 없어요');return}
-  if(await beltSave(list)){S.bsel=new Set();toast({kuk1:`${list.length}명을 국기원 심사 대상에 넣었어요`,kuk0:`${list.length}명을 국기원 심사 대상에서 뺐어요`+(skip?' (빨간띠는 자동 대상이라 그대로)':''),up:`${list.length}명 승급했어요${skip?((+m.slice(5))%2?` (${skip}명 제외: 띠 미입력·1급)`:` (${skip}명 제외: 짝수 달은 초등부만)`):''}`,undo:`${list.length}명 승급을 취소했어요`}[kind]||`${list.length}명 ${kind||'시상 지움'} 처리했어요`+(skip?` (${skip}명 제외)`:''));renderAdmin()}}
+  if(!list.length){toast(kind==='kuk1'?'이미 국기원 대상이거나 빨간띠예요':kind==='kuk0'?'직접 추가한 국기원 대상이 없어요 (빨간띠는 자동 대상)':kind==='up'?((+m.slice(5))%2?'승급할 수 있는 원생이 없어요 (띠 미입력·1급은 제외)':'짝수 달은 초등부만 승급해요. 고른 원생 중 초등부가 없어요'):kind==='undo'?'이번 달 승급 기록이 없어요':kind==='pass'?'국기원 합격은 빨간띠나 1~3품 원생만 할 수 있어요':'선택한 원생이 없어요');return}
+  if(await beltSave(list)){S.bsel=new Set();toast({kuk1:`${list.length}명을 국기원 심사 대상에 넣었어요`,kuk0:`${list.length}명을 국기원 심사 대상에서 뺐어요`+(skip?' (빨간띠는 자동 대상이라 그대로)':''),up:`${list.length}명 승급했어요${skip?((+m.slice(5))%2?` (${skip}명 제외: 띠 미입력·1급)`:` (${skip}명 제외: 짝수 달은 초등부만)`):''}`,undo:`${list.length}명 승급을 취소했어요`,pass:`${list.length}명 국기원 합격 처리했어요 (다음 품 첫 급으로)`+(skip?` (${skip}명 제외)`:'')}[kind]||`${list.length}명 ${kind||'시상 지움'} 처리했어요`+(skip?` (${skip}명 제외)`:''));renderAdmin()}}
 function beltImportSheet(){
   const bg=sheet(`<h3>띠 현황 붙여넣기</h3><div class="note" style="margin-top:0">매달 쓰시던 현황 글을 그대로 붙여넣으세요. <b>"파랑띠(6급) : 이름, 이름 — 9명"</b> 같은 줄을 읽어서 원생 띠에 넣어요. 같은 이름은 (여)/(남)으로 구분해요. 승급 기록은 남기지 않아요.</div>
    <textarea id="bi" style="min-height:200px"></textarea><div id="biPrev" class="note"></div>
    <div class="row" style="margin-top:12px"><button class="btn ghost grow" id="biX">취소</button><button class="btn grow" id="biOk">적용하기</button></div>`);
   const parse=()=>{const res=[],miss=[];
-    bg.querySelector('#bi').value.split(/\r?\n/).forEach(line=>{const mt=line.match(/^\s*([가-힣]+띠(?:\(\d급\))?)\s*[:：]\s*(.+?)\s*(?:[—–-]\s*\d+\s*명)?\s*$/);if(!mt)return;
+    bg.querySelector('#bi').value.split(/\r?\n/).forEach(line=>{const mt=line.match(/^\s*([가-힣]+띠(?:\(\d급\))?|[1-4]\s*품)\s*[:：]\s*(.+?)\s*(?:[—–-]\s*\d+\s*명)?\s*$/);if(!mt)return;
+      const lp=(mt[1].match(/^([1-4])\s*품$/)||[])[1];if(lp)mt[1]='품띠';
       const b=BELT_ORDER.find(x=>x===mt[1]||x.startsWith(mt[1].replace(/\(.*$/,'')+'('))||BELT_ORDER.find(x=>x.replace(/\(.*$/,'')===mt[1].replace(/\(.*$/,''));if(!b)return;
       mt[2].split(/[,，]/).map(n=>n.trim()).filter(Boolean).forEach(n=>{const g=(n.match(/\((여|남)\)/)||[])[1],nm=normName(n.replace(/\(.*?\)/g,''));
         let c=S.students.filter(x=>normName(x.name)===nm);if(g&&c.length>1)c=c.filter(x=>x.gender===g);
-        if(c.length===1)res.push({x:c[0],b});else miss.push(n+(c.length>1?'(같은 이름 여러 명)':''))})});
+        const pp=+(n.match(/([1-4])\s*품/)||[])[1]||+lp||0,pg=+(n.match(/(\d{1,2})\s*급/)||[])[1]||0;
+        if(c.length===1)res.push({x:c[0],b,poom:b==='품띠'&&pp?pp:0,pg:b==='품띠'&&pp?(pg&&pg<=poomMax(pp)?pg:poomMax(pp)):0});else miss.push(n+(c.length>1?'(같은 이름 여러 명)':''))})});
     return{res,miss}};
   bg.querySelector('#bi').oninput=()=>{const{res,miss}=parse();bg.querySelector('#biPrev').innerHTML=`${res.length}명 찾음${miss.length?` · <b style="color:var(--bad)">못 찾음 ${miss.length}명</b>: ${miss.slice(0,15).map(esc).join(', ')}${miss.length>15?' 외':''}`:''}`};
   bg.querySelector('#biX').onclick=()=>bg.remove();
   bg.querySelector('#biOk').onclick=async()=>{const{res}=parse();if(!res.length){toast('읽은 원생이 없어요');return}
-    if(await beltSave(res.map(({x,b})=>({id:x.id,data:{...plain(x),belt:b}})))){bg.remove();toast(`${res.length}명 띠를 넣었어요`);renderAdmin()}}}
+    if(await beltSave(res.map(({x,b,poom,pg})=>({id:x.id,data:(()=>{const o={...plain(x),belt:b};if(poom){o.poom=poom;o.pg=pg}else if(b!=='품띠'){delete o.poom;delete o.pg}return o})()})))){bg.remove();toast(`${res.length}명 띠를 넣었어요`);renderAdmin()}}}
 function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
  <a class="btn ghost full" href="guide.html" target="_blank" rel="noopener" style="display:block;text-decoration:none;margin-bottom:6px">📘 사범님 설명서 열기 (폰 입력 방법)</a>
  <details open><summary><span><span class="step">매달</span>측정부터 리포트까지</span></summary><ol>
@@ -465,7 +487,8 @@ function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
   <li><b>이번 달 승급 대상 모두 고르기</b> → 심사에서 빠질 원생은 이름을 눌러 빼기 → <b>⬆ 한 단계 승급</b>. 잘못 누르면 <b>↩ 이번 달 승급 취소</b>.</li>
   <li>홀수 달은 수상자를 골라 <b>🏆 우수상</b> / <b>🥇 모범상</b>.</li>
   <li><b>📋 띠 현황 문구 만들기</b> → 복사 → 사범님 단톡·에듀에 붙여넣기. 띠 주문 수량도 같이 나와요.</li>
-  <li>빨간띠(1급)가 되면 <b>국기원 심사 대상</b>으로 따로 모이고 도장 승급에서 빠져요. 품·단을 받으면 원생 탭에서 띠를 품띠/검정띠로 바꿔 주세요.</li></ol></details>
+  <li>빨간띠(1급)가 되면 <b>국기원 심사 대상</b>으로 따로 모이고 도장 승급에서 빠져요. 국기원에 합격하면 이름을 골라 <b>🎉 국기원 합격</b>을 누르세요. 빨간띠는 1품 12급, 1품은 2품 24급, 2품은 3품 36급, 3품은 4품 48급으로 바뀌어요.</li>
+  <li><b>유품자 급수</b> — 1품 12급→1급, 2품 24급→1급, 3품 36급→1급, 4품 48급→1급. 품띠 원생은 원생 창에서 품과 급을 넣고, 매달 <b>한 단계 승급</b>으로 급을 올려요(띠 주문에는 안 들어가요). 1급이 되면 자동으로 국기원 심사 대상에 들어가요. 붙여넣기는 <b>"1품 : 이름(12급), 이름(11급) — 2명"</b>처럼 쓰면 읽어요.</li></ol></details>
  <details><summary><span><span class="step">처음 1번</span>원생 명단 넣기</span></summary><ol>
   <li>에듀 PC › 원생 엑셀출력에서 <b>학생번호 · 원생이름 · 생일 · 성별 · 학년 · 부 · 부모1 전화번호</b>만 체크 → 엑셀 출력.</li>
   <li>원생 탭 › <b>에듀 원생 명단 엑셀 올리기</b> → 파일 선택 → 내용 확인 → 적용하기.</li>
@@ -540,15 +563,20 @@ function studentSheet(id){
   <label>이름 *</label><input id="f_name" value="${esc(s.name||'')}">
   <div class="grid2"><div><label>생년월일</label><input type="date" id="f_birth" value="${esc(s.birth||'')}"></div><div><label>성별</label><select id="f_gender">${['','남','여'].map(g=>`<option ${s.gender===g?'selected':''}>${g}</option>`).join('')}</select></div></div>
   <div class="grid2"><div><label>부 (시간)</label><input id="f_cls" list="cl" value="${esc(s.cls||'')}"><datalist id="cl">${classes().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div><div><label>띠</label><select id="f_belt">${BELTS.map(b=>`<option ${s.belt===b?'selected':''}>${b}</option>`).join('')}</select></div></div>
+  <div class="grid2" id="f_poomBox" style="${s.belt==='품띠'?'':'display:none'}"><div><label>품</label><select id="f_poom">${['','1','2','3','4'].map(p=>`<option value="${p}" ${String(s.poom||'')===p?'selected':''}>${p?p+'품':'선택'}</option>`).join('')}</select></div><div><label>급 (품 안의 급수)</label><select id="f_pg"></select></div></div>
   <label>보호자 휴대폰 * (학부모 로그인용)</label><input id="f_phone" type="tel" value="${esc(s.phone||'')}">
   <label>💬 사범님 한마디 (선택 · 리포트 맨 끝에 나가요)</label><textarea id="f_comment" style="min-height:70px" placeholder="예) 발차기 자세가 정말 좋아졌어요!">${esc(s.comment||'')}</textarea>
   ${!isNew&&s.phone?`<div class="note" style="margin-top:12px;padding:10px;background:var(--bg);border-radius:10px"><b>🔑 학부모님이 비밀번호를 잊으셨을 때</b><br>① 아래 로그인 ID 복사 → ② Firebase 콘솔 › Authentication › 사용자에서 붙여넣어 검색 → ③ 그 줄을 삭제<br>→ 학부모님이 "처음 왔어요"로 새 비밀번호를 만들면 끝이에요. 리포트·기록은 그대로 남아요.<br><span id="f_lid" style="word-break:break-all;font-family:monospace;font-size:.75rem">계산 중…</span> <button class="btn ghost" id="f_lcopy" style="padding:4px 10px;font-size:.75rem">복사</button></div>`:''}
   <div class="row" style="margin-top:14px">${isNew?'':'<button class="btn danger" id="f_del">삭제</button>'}<button class="btn ghost grow" id="f_x">취소</button><button class="btn grow" id="f_ok">저장</button></div>`);
   bg.querySelector('#f_x').onclick=()=>bg.remove();
+  {const fb=bg.querySelector('#f_belt'),fp=bg.querySelector('#f_poom'),fg=bg.querySelector('#f_pg');
+   const fill=()=>{const mx=poomMax(fp.value),cur=+fg.value||+s.pg||mx;fg.innerHTML=mx?Array.from({length:mx},(_,i)=>mx-i).map(g=>`<option value="${g}" ${g===Math.min(cur,mx)?'selected':''}>${g}급</option>`).join(''):'<option value="">품을 먼저 고르세요</option>'};
+   fill();fp.onchange=()=>{fg.value='';fill();fg.value=String(poomMax(fp.value)||'')};fb.onchange=()=>{bg.querySelector('#f_poomBox').style.display=fb.value==='품띠'?'':'none'}}
   const lid=bg.querySelector('#f_lid');if(lid){parentKey(s.name,s.phone).then(k=>{const id=k+'@'+PARENT_DOMAIN;lid.textContent=id;bg.querySelector('#f_lcopy').onclick=()=>navigator.clipboard.writeText(id).then(()=>toast('복사했어요')).catch(()=>toast(id))})}
   bg.querySelector('#f_ok').onclick=async()=>{const v=k=>bg.querySelector('#f_'+k).value.trim();
     if(!v('name')){toast('이름을 입력해 주세요');return}
     const o={...s,name:v('name'),birth:v('birth'),gender:v('gender'),cls:v('cls'),belt:v('belt'),phone:v('phone'),comment:v('comment')};delete o.id;
+    if(o.belt==='품띠'&&v('poom')){o.poom=+v('poom');o.pg=+v('pg')||poomMax(o.poom)}else{delete o.poom;delete o.pg}
     if((s.belt||'')!==o.belt&&o.belt){const m=ym(new Date());o.beltLog=[...(s.beltLog||[]).filter(l=>l.m!==m),{m,from:s.belt||'',to:o.belt,manual:true}]} // 띠를 직접 바꿔도 기록(신입 첫 띠 → 띠 주문)
     const keyChanged=!isNew&&s.phone&&(normName(s.name)!==normName(o.name)||digits(s.phone)!==digits(o.phone));
     try{await F.setDoc(F.doc(db,'students',s.id),o);
@@ -685,6 +713,7 @@ $('#view').addEventListener('click',e=>{
   if(t.id==='bA2')return beltAction('모범상');
   if(t.id==='bA0')return beltAction('');
   if(t.id==='bK1')return beltAction('kuk1');
+  if(t.id==='bPass')return beltAction('pass');
   if(t.id==='bK0')return beltAction('kuk0');
   if(t.id==='bImport')return beltImportSheet();
   if(t.id==='bClearManual'){const m=beltMonth(),pick=S.bsel&&S.bsel.size?S.bsel:null;
