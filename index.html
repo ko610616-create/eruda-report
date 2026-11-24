@@ -360,11 +360,13 @@ function vBelt(){
    <div class="grid2" style="gap:8px"><button class="btn" id="bUp" ${sel.size?'':'disabled'}>⬆ 한 단계 승급</button><button class="btn ghost" id="bUndo" ${sel.size?'':'disabled'}>↩ 이번 달 승급 취소</button>
    <button class="btn ghost" id="bA1" ${sel.size?'':'disabled'}>🏆 우수상</button><button class="btn ghost" id="bA2" ${sel.size?'':'disabled'}>🥇 모범상</button></div>
    <button class="btn ghost full" id="bA0" style="margin-top:8px" ${sel.size?'':'disabled'}>시상 지우기</button>
-   <div class="grid2" style="gap:8px;margin-top:8px"><button class="btn ghost" id="bK1" ${sel.size?'':'disabled'}>🎖 국기원 대상 추가</button><button class="btn ghost" id="bK0" ${sel.size?'':'disabled'}>국기원 대상 빼기</button></div></div>`:`<div class="note" style="text-align:center;margin:4px 0 12px">이름을 누르면 승급·시상 버튼이 화면 아래에 나타나요.</div>`}
+   <div class="grid2" style="gap:8px;margin-top:8px"><button class="btn ghost" id="bK1" ${sel.size?'':'disabled'}>🎖 국기원 대상 추가</button><button class="btn ghost" id="bK0" ${sel.size?'':'disabled'}>국기원 대상 빼기</button></div>
+   <button class="btn ghost full" id="bRestoreManual" style="margin-top:8px">✎ 직접 입력 표시 다시 붙이기 (지운 것 되살리기)</button></div>`:`<div class="note" style="text-align:center;margin:4px 0 12px">이름을 누르면 승급·시상 버튼이 화면 아래에 나타나요.</div>`}
   <div class="card"><div class="row"><b class="grow">이번 달 정리</b><span class="meta">승급 ${promos.length}명 · 시상 ${aw.length}명</span></div>
    <button class="btn full" id="bText" style="margin-top:8px">📋 띠 현황 문구 만들기 (띠 주문 포함)</button>
    <button class="btn ghost full" id="bImport" style="margin-top:8px">📥 지금 띠 현황 붙여넣기 (처음 한 번)</button>
    ${S.students.some(x=>(x.beltLog||[]).some(l=>l.m===m&&l.manual))?`<button class="btn ghost full" id="bClearManual" style="margin-top:8px">✎ 이번 달 직접 입력 기록 지우기 (${S.students.filter(x=>(x.beltLog||[]).some(l=>l.m===m&&l.manual)).length}명 · 띠는 그대로)</button><div class="note">처음 명단을 원생 창에서 하나씩 넣었다면 이 버튼으로 ✎ 기록을 지우세요. 띠는 그대로 두고 띠 주문에서만 빠져요. 진짜 신입의 첫 띠는 지우지 마세요(골라서 지우려면 이름을 고른 뒤 누르세요).</div>`:''}
+   ${S.students.some(x=>(x.beltLogTrash||[]).some(l=>l.m===m))?`<button class="btn full" id="bRestoreManual" style="margin-top:8px">↩ 지운 ✎ 기록 되살리기 (${S.students.filter(x=>(x.beltLogTrash||[]).some(l=>l.m===m)).length}명)</button>`:''}
    <div class="note">승급하면 원생마다 "언제 어떤 띠로" 기록이 남아요. 띠 주문 수량은 이번 달 새로 바뀐 띠만 셉니다.</div></div>`}
 function beltCheck(m){ // 띠 명단 자동 검산: [ok, 문장]
   const out=[],mo=+m.slice(5),odd=mo%2===1,withBelt=S.students.filter(x=>beltIdx(x.belt)>=0),promos=promotedIn(m);
@@ -458,6 +460,7 @@ function vHelp(){return`<div class="card help"><h2>📖 사용법</h2>
   <li><b>처음 한 번</b> — 띠 관리 탭 › <b>지금 띠 현황 붙여넣기</b> › 매달 쓰던 현황 글을 그대로 붙여넣기 › 적용하기. 못 찾은 이름은 원생 탭에서 띠를 직접 고르세요.</li>
   <li><b>이름 옆 표시</b> — <b>⬆</b> 이번 달 승급 버튼으로 올림 · <b>✎</b> 원생 창에서 띠를 직접 바꿈(신입 첫 띠 등) · 🏆 우수상 · 🥇 모범상. ⬆와 ✎ 모두 그달 <b>띠 주문</b>에 들어가요.</li>
   <li><b>처음 명단을 원생 창에서 하나씩 넣었다면</b> ✎가 잔뜩 붙고 띠 주문이 많이 잡혀요. <b>✎ 이번 달 직접 입력 기록 지우기</b>를 누르면 띠는 그대로 두고 주문에서만 빠져요. 진짜 신입이 섞여 있으면 신입을 빼고 나머지 이름만 고른 뒤 누르세요.</li>
+  <li><b>잘못 지웠다면</b> 이번 달 정리 칸의 <b>↩ 지운 ✎ 기록 되살리기</b>를 누르면 그대로 돌아와요. 이 버튼이 안 보이면(예전에 지운 것) 되살릴 원생 이름을 고른 뒤 아래 상자의 <b>✎ 직접 입력 표시 다시 붙이기</b>를 누르세요.</li>
   <li><b>기준 달</b>을 고릅니다. <b>홀수 달 = 전체 승급 + 시상</b>, <b>짝수 달 = 초등부만 승급(시상 없음)</b>.</li>
   <li><b>이번 달 승급 대상 모두 고르기</b> → 심사에서 빠질 원생은 이름을 눌러 빼기 → <b>⬆ 한 단계 승급</b>. 잘못 누르면 <b>↩ 이번 달 승급 취소</b>.</li>
   <li>홀수 달은 수상자를 골라 <b>🏆 우수상</b> / <b>🥇 모범상</b>.</li>
@@ -685,9 +688,14 @@ $('#view').addEventListener('click',e=>{
   if(t.id==='bK0')return beltAction('kuk0');
   if(t.id==='bImport')return beltImportSheet();
   if(t.id==='bClearManual'){const m=beltMonth(),pick=S.bsel&&S.bsel.size?S.bsel:null;
-    const list=S.students.filter(x=>(!pick||pick.has(x.id))&&(x.beltLog||[]).some(l=>l.m===m&&l.manual)).map(x=>({id:x.id,data:{...plain(x),beltLog:(x.beltLog||[]).filter(l=>!(l.m===m&&l.manual))}}));
+    const list=S.students.filter(x=>(!pick||pick.has(x.id))&&(x.beltLog||[]).some(l=>l.m===m&&l.manual)).map(x=>({id:x.id,data:{...plain(x),beltLog:(x.beltLog||[]).filter(l=>!(l.m===m&&l.manual)),beltLogTrash:[...(x.beltLogTrash||[]).filter(l=>l.m!==m),...(x.beltLog||[]).filter(l=>l.m===m&&l.manual)]}}));
     if(!list.length){toast('지울 직접 입력 기록이 없어요');return}
     beltSave(list).then(ok=>{if(ok){S.bsel=new Set();toast(`${list.length}명의 직접 입력 기록을 지웠어요 (띠는 그대로)`);renderAdmin()}});return}
+  if(t.id==='bRestoreManual'){const m=beltMonth(),pick=S.bsel&&S.bsel.size?S.bsel:null;
+    const list=S.students.filter(x=>(!pick||pick.has(x.id))&&!(x.beltLog||[]).some(l=>l.m===m)&&((x.beltLogTrash||[]).some(l=>l.m===m)||(pick&&beltIdx(x.belt)>=0))).map(x=>{const tr=(x.beltLogTrash||[]).find(l=>l.m===m);
+      const o=plain(x);o.beltLog=[...(x.beltLog||[]),tr||{m,from:'',to:x.belt,manual:true}];o.beltLogTrash=(x.beltLogTrash||[]).filter(l=>l.m!==m);if(!o.beltLogTrash.length)delete o.beltLogTrash;return{id:x.id,data:o}});
+    if(!list.length){toast(pick?'고른 원생 중 되살릴 수 있는 원생이 없어요 (띠가 없거나 이미 이번 달 기록이 있음)':'되살릴 기록이 없어요. 이름을 골라서 다시 눌러 주세요');return}
+    beltSave(list).then(ok=>{if(ok){S.bsel=new Set();toast(`${list.length}명의 ✎ 기록을 되살렸어요`);renderAdmin()}});return}
   if(t.id==='bText'){const txt=beltText(beltMonth()),ck=beltCheck(beltMonth()),bad=ck.filter(c=>!c[0]).length;const bg=sheet(`<h3>${+beltMonth().slice(5)}월 띠 현황 문구</h3><div class="${bad?'banner':'card'}" style="margin:6px 0 10px;padding:10px 12px;${bad?'':'background:var(--ok-soft)'}"><b>${bad?`⚠️ 확인할 것 ${bad}개`:'✅ 자동 검산 통과'}</b><div style="font-size:.82rem;line-height:1.7;margin-top:4px">${ck.map(c=>(c[0]?'✅ ':'⚠️ ')+esc(c[1])).join('<br>')}</div></div><textarea id="btx" style="min-height:300px">${esc(txt)}</textarea><div class="row" style="margin-top:12px"><button class="btn ghost grow" id="btX">닫기</button><button class="btn grow" id="btC">복사하기</button></div>`);
     bg.querySelector('#btX').onclick=()=>bg.remove();bg.querySelector('#btC').onclick=()=>navigator.clipboard.writeText(bg.querySelector('#btx').value).then(()=>toast('복사했어요. 단톡·에듀에 붙여넣으세요')).catch(()=>{bg.querySelector('#btx').select();toast('글을 길게 눌러 복사해 주세요')});return}
   if(t.id==='selOn'){S.sel=new Set();window.scrollTo(0,0);return renderAdmin()}
