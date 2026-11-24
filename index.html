@@ -140,7 +140,8 @@ const fmt=(k,v)=>FI[k].d?(+v).toFixed(FI[k].d):String(Math.round(+v));
 // 지난 기록 대비 변화: +면 좋아짐
 function fitDiff(recs,k){const rs=recs.filter(r=>hv(r,k));if(rs.length<2)return null;const a=+rs[rs.length-2][k],b=+rs[rs.length-1][k];const d=b-a;return{raw:d,better:FI[k].low?-d:d,txt:fmt(k,Math.abs(d))+FI[k].u}}
 const bmi=r=>r&&r.h&&r.w?Math.round(r.w/((r.h/100)**2)*10)/10:null;
-function age(b){if(!b)return'';const d=new Date(b),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate()))a--;return isNaN(a)?'':a+'세'}
+// 나이: 에듀 학년(유-5·6·7 → 초-1)과 같은 한국식 나이(올해 − 태어난 해 + 1)
+function age(b){const y=+(String(b||'').match(/^(\d{4})/)||[])[1];if(!y)return'';const a=new Date().getFullYear()-y+1;return a>0&&a<100?a+'세':''}
 const digits=s=>String(s||'').normalize('NFKC').replace(/\D/g,''); // 전각 숫자(０１０)도 인식
 const normName=s=>String(s||'').normalize('NFKC').replace(/\s/g,'');
 function given(name){const n=normName(name);return n.length>=3?n.slice(-2):n}
