@@ -275,7 +275,7 @@ async function parentReport(){
   let snap;try{snap=await F.getDoc(F.doc(db,'reports',key))}catch(e){snap=null}
   if(!snap||!snap.exists()){
     $('#view').innerHTML=`<div class="card"><h2>아직 리포트가 없어요</h2><div class="note">도장에서 측정 후 리포트를 올리면 여기서 볼 수 있어요.<br>아이 이름이나 번호를 다르게 입력하셨다면 로그아웃 후 다시 들어와 주세요.<br>문의: ${esc(DOJO.tel)}</div></div>`;return}
-  const r=snap.data();$('#view').innerHTML=reportHtml(r);
+  const r=snap.data();$('#view').innerHTML=reportHtml(r);bindReportStories(r);
 }
 function reportHtml(r){
   const recs=(r.records||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
@@ -289,7 +289,7 @@ function reportHtml(r){
   return`<div class="card"><div class="row"><div class="av">${esc(given(r.name))}</div><div class="grow"><div class="name">${esc(r.name)}</div><div class="meta">${[r.grade,r.belt,age(r.birth)].filter(Boolean).map(esc).join(' · ')}</div></div><div class="meta">업데이트<br>${esc((r.updatedAt||'').slice(0,10))}</div></div></div>
   ${b?`<div class="stats"><div class="stat"><b>${b.h??'-'}</b><span>키 cm ${d(b,'h','cm')}</span></div><div class="stat"><b>${b.w??'-'}</b><span>몸무게 kg ${d(b,'w','kg')}</span></div><div class="stat"><b>${bmi(b)??'-'}</b><span>BMI</span></div></div>`:''}
   <div class="card"><h2>💬 이번 달 피드백</h2><div class="fb">${esc(r.feedback||'')}</div></div>
-  ${reportPhoto(r.photo)?`<div class="card"><h2>수련 사진</h2><img src="${r.photo}" alt="수련 사진" style="display:block;max-width:100%;max-height:540px;border-radius:10px;margin:auto"></div>`:''}
+  ${reportStoriesHtml(r)}
   ${f?`<div class="card"><h2>💪 체력 측정 <span class="meta">${esc(f.date)}</span></h2>${fitRows}</div>`:''}
   ${weak.length?`<div class="card" style="background:var(--pri-soft)"><h2>🏃 집에서 해보는 추천 운동 <span class="meta">주 3회</span></h2>${weak.map(k=>`<div style="margin-top:6px"><b>${FI[k].l} 키우기</b><ul style="margin:4px 0 0;padding-left:1.2em">${EX[k].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`:''}
   ${body.length?`<div class="card"><h2>📏 키 변화 (cm)</h2>${trend(recs,'h','#A01E2C','키')}<h2 style="margin-top:14px">⚖️ 몸무게 변화 (kg)</h2>${trend(recs,'w','#8C6A6F','몸무게')}</div>`:''}
@@ -586,7 +586,7 @@ function vReport(){
   return`${chips()}<div class="card"><h2>📊 학부모 리포트 올리기</h2>
   <div class="note" style="margin-top:0">기록이 있는 ${pending.length}명의 리포트를 만들어 올려요. 학부모는 사이트 주소에서 아이 이름·번호·비밀번호로 자기 아이 것만 볼 수 있어요.</div>
   <button class="btn full" id="pub" style="margin-top:10px" ${busy||!pending.length?'disabled':''}>${busy?'올리는 중…':`${pending.length}명 리포트 올리기`}</button>
-  <button class="btn ghost full" id="reportCamera" style="margin-top:8px">📷 사진 촬영·업로드</button>
+  <button class="btn ghost full" id="reportCamera" style="margin-top:8px">📷 수련 스토리 올리기</button>
   <button class="btn ghost full" id="copyNotice" style="margin-top:8px">학부모 공지 문구 복사</button></div>
   ${pending.map(s=>{const rs=recsOf(s.id);return`<div class="card"><div class="row"><div class="av">${esc(given(s.name))}</div><div class="grow"><div class="name">${esc(s.name)}</div><div class="meta">${esc(s.phone||'⚠️ 번호 없음 — 학부모가 볼 수 없어요')} · ${s.publishedAt?'올림 '+esc(s.publishedAt.slice(5,10)):'아직 안 올림'}</div></div></div>
    <div class="fb meta" style="margin-top:8px">${esc(feedback(s,rs))}</div>
@@ -595,6 +595,53 @@ function vReport(){
 
 function reportPhoto(value){
   return typeof value==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(value);
+}
+
+const REPORT_STORY_LIMIT=8;
+function reportStories(report){
+  const stories=Array.isArray(report.stories)?report.stories.filter(item=>reportPhoto(item?.photo)):[];
+  if(reportPhoto(report.photo))stories.push({photo:report.photo,createdAt:''});
+  return stories.slice(0,REPORT_STORY_LIMIT);
+}
+
+function reportStoriesHtml(report){
+  if(!reportStories(report).length)return '';
+  return `<section class="card" id="reportStories" aria-label="수련 스토리">
+    <h2>📸 수련 스토리</h2>
+    <button class="btn ghost full" data-story-image aria-label="다음 사진" style="padding:0;overflow:hidden;background:var(--bg)">
+      <img alt="수련 사진" style="display:block;width:100%;max-height:540px;object-fit:contain">
+    </button>
+    <div class="row" style="margin-top:8px">
+      <button class="btn ghost sm" data-story-prev>이전</button>
+      <div class="grow meta" role="status" style="text-align:center" data-story-count></div>
+      <button class="btn ghost sm" data-story-next>다음</button>
+    </div>
+  </section>`;
+}
+
+function bindReportStories(report){
+  const card=$('#reportStories');
+  if(!card)return;
+  const stories=reportStories(report);
+  const imageButton=card.querySelector('[data-story-image]');
+  const image=card.querySelector('img');
+  const count=card.querySelector('[data-story-count]');
+  const prev=card.querySelector('[data-story-prev]');
+  const next=card.querySelector('[data-story-next]');
+  let index=0;
+  function show(){
+    const story=stories[index];
+    image.src=story.photo;
+    const date=story.createdAt?new Date(story.createdAt).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'}):'';
+    count.textContent=[`${index+1} / ${stories.length}`,date].filter(Boolean).join(' · ');
+    prev.disabled=index===0;
+    next.disabled=index===stories.length-1;
+    imageButton.disabled=stories.length===1;
+  }
+  prev.onclick=()=>{index=Math.max(0,index-1);show()};
+  next.onclick=()=>{index=Math.min(stories.length-1,index+1);show()};
+  imageButton.onclick=()=>{index=(index+1)%stories.length;show()};
+  show();
 }
 
 async function compressReportPhoto(file){
@@ -611,7 +658,7 @@ async function compressReportPhoto(file){
       canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
       context.drawImage(image,0,0,canvas.width,canvas.height);
       const photo=canvas.toDataURL('image/jpeg',0.75);
-      if(photo.length<=220000&&reportPhoto(photo))return photo;
+      if(photo.length<=80000&&reportPhoto(photo))return photo;
     }
     throw new Error('Photo exceeds report size limit');
   }finally{URL.revokeObjectURL(url)}
@@ -642,7 +689,7 @@ function reportPhotoSheet(id){
   const student=S.students.find(s=>s.id===id);
   if(!student?.phone||busy)return;
   const bg=sheet(`<h3>${esc(student.name)} 수련 사진</h3>
-    <div class="note">보호자 동의를 받은 사진을 올려 주세요. 촬영을 완료하거나 사진을 선택하면 이 아이의 학부모 리포트에 바로 표시돼요. 새 사진은 이전 사진을 교체해요. ${student.publishedAt?'': '처음 올리는 경우 학부모 리포트도 함께 공개돼요.'}</div>
+    <div class="note">보호자 동의를 받은 사진을 올려 주세요. 촬영을 완료하거나 사진을 선택하면 이 아이의 학부모 리포트에 바로 표시돼요. 최근 사진 8장을 볼 수 있어요. ${student.publishedAt?'': '처음 올리는 경우 학부모 리포트도 함께 공개돼요.'}</div>
     <div class="row" style="margin-top:12px"><button class="btn grow" data-open-camera>사진 촬영</button><button class="btn ghost grow" data-open-gallery>사진 선택</button></div>
     <input type="file" class="hide" data-camera accept="image/*" capture="environment">
     <input type="file" class="hide" data-gallery accept="image/*">
@@ -671,15 +718,20 @@ function reportPhotoSheet(id){
       const key=await parentKey(student.name,student.phone);
       const report=F.doc(db,'reports',key);
       const now=new Date().toISOString();
-      if(student.publishedAt){
-        await F.updateDoc(report,{photo,updatedAt:now});
-      }else{
-        const batch=F.writeBatch(db);
-        batch.set(report,{...reportData(student,now),photo},{merge:true});
-        batch.update(F.doc(db,'students',id),{publishedAt:now});
-        await batch.commit();
-        student.publishedAt=now;
-      }
+      await F.runTransaction(db,async transaction=>{
+        const current=await transaction.get(report);
+        const stories=reportStories(current.exists()?current.data():{});
+        const nextStories=[{photo,createdAt:now},...stories].slice(0,REPORT_STORY_LIMIT);
+        if(current.exists()){
+          transaction.update(report,{stories:nextStories,photo:F.deleteField(),updatedAt:now});
+        }else{
+          transaction.set(report,{...reportData(student,now),stories:nextStories});
+        }
+        if(!student.publishedAt||!current.exists()){
+          transaction.update(F.doc(db,'students',id),{publishedAt:now});
+        }
+      });
+      student.publishedAt=student.publishedAt||now;
       bg.remove();
       toast('학부모 리포트에 사진을 올렸어요');
     }catch(error){
