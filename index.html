@@ -819,7 +819,7 @@ function vStories(){
   const count=storyRecipients().length;
   return `<div class="card">
     <h2>📸 수업 스토리</h2>
-    <div class="note">올린 사진은 등록된 <b>모든 학부모님</b>이 수업 스토리에서 24시간 동안 볼 수 있어요(인스타 스토리처럼). 아이 얼굴이 나온 사진은 보호자 동의를 확인해 주세요.</div>
+    <div class="note">올린 사진은 등록된 <b>모든 학부모님</b>이 수업 스토리에서 24시간 동안 볼 수 있어요(인스타 스토리처럼).</div>
     <button class="btn full" style="margin-top:12px" id="reportCamera" ${busy||!count?'disabled':''}>사진 촬영·올리기</button>
     ${count?'':'<div class="note">먼저 원생과 보호자 번호를 등록해 주세요.</div>'}
   </div><div class="card"><h2>올린 스토리</h2><div class="note" id="adminStoryPosts">불러오는 중…</div></div>`;
@@ -837,7 +837,7 @@ function reportPhotoSheet(target,audience=''){
   const title=group?audience:remaining[0].name;
 
   const bg=sheet(`<h3>${esc(title)} ${group?'수업 스토리':'수련 사진'}</h3>
-    <div class="note">아이 얼굴이 나온 사진은 보호자 동의를 확인해 주세요. ${group?`촬영하거나 선택하면 등록된 모든 학부모님의 수업 스토리에 24시간 동안 보여요(인스타 스토리처럼).`:'촬영하거나 선택하면 이 아이의 학부모님께만 바로 전달돼요.'} 최근 사진 8장을 볼 수 있어요.</div>
+    <div class="note">${group?`촬영하거나 선택하면 등록된 모든 학부모님의 수업 스토리에 24시간 동안 보여요(인스타 스토리처럼).`:'촬영하거나 선택하면 이 아이의 학부모님께만 바로 전달돼요.'} 최근 사진 8장을 볼 수 있어요.</div>
     <div class="row" style="margin-top:12px"><button class="btn grow" data-open-camera>사진 촬영</button><button class="btn ghost grow" data-open-gallery>사진 선택</button></div>
     <input type="file" class="hide" data-camera accept="image/*" capture="environment">
     <input type="file" class="hide" data-gallery accept="image/*">
